@@ -9,7 +9,7 @@ import (
 
 const (
     TimeoutRequest = time.Second * 11
-    SignalServerRequest = "http://127.0.0.1/listall"
+    SignalServerRequest = "http://127.0.0.1:30001/listall"
 )
 
 func main() {
