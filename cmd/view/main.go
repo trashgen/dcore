@@ -1,25 +1,29 @@
 package main
 
 import (
+    "fmt"
     "log"
     "time"
     "net/http"
     "io/ioutil"
+    dcconf "dcore/codebase/config"
 )
 
 const (
     TimeoutRequest = time.Second * 11
-    SignalServerRequest = "http://127.0.0.1:30001/listall"
 )
 
 func main() {
+    config := dcconf.NewConfig()
+    config.LoadConfig()
+
     viewClient := &http.Client{
         Timeout   : TimeoutRequest,
         Transport : &http.Transport {
             DisableKeepAlives   : true,
             DisableCompression  : false,
             TLSHandshakeTimeout : TimeoutRequest}}
-    resp, err := viewClient.Get(SignalServerRequest)
+    resp, err := viewClient.Get(buildListAllGetRequest(config))
     if resp != nil {
         defer resp.Body.Close()
     }
@@ -34,4 +38,8 @@ func main() {
     
     body := string(bodyBytes)
     log.Printf("Request from SignalServer:\n[%s]\n", body)
+}
+
+func buildListAllGetRequest(config *dcconf.Config) string {
+    return fmt.Sprintf("http://%s:%d/%s", config.View.SSHost, config.Common.SSListenPort, config.Common.SSListAll)
 }
