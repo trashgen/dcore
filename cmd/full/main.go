@@ -2,7 +2,7 @@ package main
 
 import (
     "fmt"
-    l "dcore/logic"
+    l "dcore/codebase"
 )
 
 func main() {
