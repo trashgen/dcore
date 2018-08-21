@@ -5,7 +5,6 @@ import (
     "log"
     "net/http"
     dcconf "dcore/codebase/config"
-    "fmt"
 )
 
 const (
@@ -30,9 +29,9 @@ func cmdListAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildListPort(config *dcconf.Config) string {
-    return fmt.Sprintf(":%d", config.Common.SSListenPort)
+    return ""
 }
 
 func buildListAll(config *dcconf.Config) string {
-    return fmt.Sprintf("/%s", config.Common.SSListAll)
+    return ""
 }

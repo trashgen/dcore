@@ -1,12 +1,14 @@
 #!/bin/bash
-PROJECT_NAME="dcore"
+PATH_TO_DISTRIB=../../../bin/dcore
+echo create folders for distrib
+mkdir -p $PATH_TO_DISTRIB/config
+echo success
 echo building...
-go build -o ../../../bin/$PROJECT_NAME/config.exe ../cmd/config/
+go build -o $PATH_TO_DISTRIB/config.exe ../cmd/config/
 echo 'config' built successfully
-go build -o ../../../bin/$PROJECT_NAME/view.exe ../cmd/view/
+go build -o $PATH_TO_DISTRIB/view.exe ../cmd/view/
 echo 'view' built successfully
-go build -o ../../../bin/$PROJECT_NAME/signal.exe ../cmd/signal/
+go build -o $PATH_TO_DISTRIB/signal.exe ../cmd/signal/
 echo 'signal' built successfully
-go build -o ../../../bin/$PROJECT_NAME/full.exe ../cmd/full/
+go build -o $PATH_TO_DISTRIB/full.exe ../cmd/full/
 echo 'full' built successfully
-sleep 3

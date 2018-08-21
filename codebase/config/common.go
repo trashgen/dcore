@@ -4,40 +4,50 @@ import (
     "os"
     "log"
     "path"
+    "io/ioutil"
     "encoding/json"
     "path/filepath"
-    "io/ioutil"
-    "strings"
-    "fmt"
 )
 
-type CommonConfig struct {
-    SSListenPort int
-    SSListAll    string
+type SignalServerConfig struct {
+    ListenPort int
 }
 
-type ViewConfig struct {
-    SSHost string
+type AddressInfo struct {
+    IP   string
+    Port int
 }
 
 type Config struct {
-    Common CommonConfig
-    View   ViewConfig
+    SSConfig     SignalServerConfig
+    Nodes      []*AddressInfo
+    Signals    []*AddressInfo
+    SSCommands []string
 }
 
 func NewConfig() *Config {
-    return &Config{}
+    return &Config{Nodes : make([]*AddressInfo, 0, 100)}
+}
+
+func NewAddressInfo(ip string, port int) *AddressInfo {
+    return &AddressInfo { IP:ip, Port:port}
 }
 
 func (self *Config) ReFileWithHardcodedValues() {
-    config := Config{
-        View: ViewConfig{SSHost:"127.0.0.1"},
-        Common: CommonConfig{
-            SSListenPort:30001,
-            SSListAll:"listall"}}
+    self.SSConfig = SignalServerConfig{ListenPort:30001}
+    
+    self.Nodes      = make([]*AddressInfo, 0, 2)
+    self.Signals    = make([]*AddressInfo, 0, 2)
+    self.SSCommands = make([]string, 0, 2)
 
-    bdata, err := json.MarshalIndent(config, "  ", "  ")
-    //bdata, err := json.Marshal(config)
+    self.Nodes      = append(self.Nodes, NewAddressInfo("127.0.0.1", 30001))
+    self.Nodes      = append(self.Nodes, NewAddressInfo("I am bad IP", 666))
+    self.Signals    = append(self.Signals, NewAddressInfo("127.0.0.1", 30001))
+    self.Signals    = append(self.Signals, NewAddressInfo("I am bad IP", 666))
+    self.SSCommands = append(self.SSCommands, "listall")
+    self.SSCommands = append(self.SSCommands, "regme")
+
+    bdata, err := json.MarshalIndent(self, "  ", "\t")
     if err != nil {
         log.Fatal(err.Error())
     }
@@ -78,16 +88,4 @@ func (self *Config) LoadConfig() {
     if err := json.Unmarshal(bytes, self); err != nil {
         log.Fatal(err.Error())
     }
-}
-
-func (self *Config) Dump() {
-    sb := strings.Builder{}
-    sb.WriteString("===============================\n")
-    sb.WriteString(fmt.Sprintf("Common.SSListenPort : [%d]\n", self.Common.SSListenPort))
-    sb.WriteString(fmt.Sprintf("Common.SSListAll    : [%s]\n", self.Common.SSListAll))
-    sb.WriteString(fmt.Sprintf("View.SSHost         : [%s]\n", self.View.SSHost))
-    //sb.WriteString(fmt.Sprintf("", ))
-    sb.WriteString("===============================\n")
-
-    fmt.Printf(sb.String())
 }

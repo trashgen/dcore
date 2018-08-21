@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "log"
     "time"
     "net/http"
@@ -41,5 +40,5 @@ func main() {
 }
 
 func buildListAllGetRequest(config *dcconf.Config) string {
-    return fmt.Sprintf("http://%s:%d/%s", config.View.SSHost, config.Common.SSListenPort, config.Common.SSListAll)
+    return ""
 }
