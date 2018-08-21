@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-    config := dcconf.NewConfig()
+    config := dcconf.NewTotalConfig()
     config.ReFileWithHardcodedValues()
 }

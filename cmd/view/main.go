@@ -1,7 +1,6 @@
 package main
 
 import (
-    "fmt"
     "log"
     "time"
     "net/http"
@@ -10,7 +9,7 @@ import (
 )
 
 func main() {
-    config := dcconf.NewConfig()
+    config := dcconf.NewTotalConfig()
     config.LoadConfig()
 
     viewClient := &http.Client{
@@ -20,7 +19,7 @@ func main() {
             DisableCompression  : false,
             TLSHandshakeTimeout : time.Second * 11}}
 
-    for _, request := range buildListAllGetRequestList(config) {
+    for _, request := range config.BuildListAllGetRequestList() {
         if body, err := doListAll(viewClient, request); err == nil {
             log.Printf("Request from SignalServer:\n[%s]\n", body)
         }
@@ -43,13 +42,4 @@ func doListAll(client *http.Client, url string) (string, error) {
     }
 
     return string(bodyBytes), nil
-}
-
-func buildListAllGetRequestList(config *dcconf.Config) []string {
-    out := make([]string, 0, len(config.Signals))
-    for _, addrInfo := range config.Signals {
-        out = append(out, fmt.Sprintf("http://%s:%d/%s", addrInfo.IP, addrInfo.Port, config.SSCommand.ListAll))
-    }
-
-    return out
 }
