@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "log"
     "time"
     "net/http"
@@ -8,37 +9,47 @@ import (
     dcconf "dcore/codebase/config"
 )
 
-const (
-    TimeoutRequest = time.Second * 11
-)
-
 func main() {
     config := dcconf.NewConfig()
     config.LoadConfig()
 
     viewClient := &http.Client{
-        Timeout   : TimeoutRequest,
+        Timeout   : time.Second * 11,
         Transport : &http.Transport {
             DisableKeepAlives   : true,
             DisableCompression  : false,
-            TLSHandshakeTimeout : TimeoutRequest}}
-    resp, err := viewClient.Get(buildListAllGetRequest(config))
+            TLSHandshakeTimeout : time.Second * 11}}
+
+    for _, request := range buildListAllGetRequestList(config) {
+        if body, err := doListAll(viewClient, request); err == nil {
+            log.Printf("Request from SignalServer:\n[%s]\n", body)
+        }
+    }
+}
+
+func doListAll(client *http.Client, url string) (string, error) {
+    resp, err := client.Get(url)
     if resp != nil {
         defer resp.Body.Close()
     }
     if err != nil {
-        log.Fatal(err)
+        log.Print(err)
+        return "", err
     }
-    
+
     bodyBytes, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         log.Fatal(err)
     }
-    
-    body := string(bodyBytes)
-    log.Printf("Request from SignalServer:\n[%s]\n", body)
+
+    return string(bodyBytes), nil
 }
 
-func buildListAllGetRequest(config *dcconf.Config) string {
-    return ""
+func buildListAllGetRequestList(config *dcconf.Config) []string {
+    out := make([]string, 0, len(config.Signals))
+    for _, addrInfo := range config.Signals {
+        out = append(out, fmt.Sprintf("http://%s:%d/%s", addrInfo.IP, addrInfo.Port, config.SSCommand.ListAll))
+    }
+
+    return out
 }
