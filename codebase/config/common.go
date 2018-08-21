@@ -9,6 +9,11 @@ import (
     "path/filepath"
 )
 
+type SignalServerRequestStringConfig struct {
+    ListAll string
+    RegMe   string
+}
+
 type SignalServerConfig struct {
     ListenPort int
 }
@@ -19,14 +24,14 @@ type AddressInfo struct {
 }
 
 type Config struct {
-    SSConfig     SignalServerConfig
     Nodes      []*AddressInfo
     Signals    []*AddressInfo
-    SSCommands []string
+    SSConfig      SignalServerConfig
+    SSCommand     SignalServerRequestStringConfig
 }
 
 func NewConfig() *Config {
-    return &Config{Nodes : make([]*AddressInfo, 0, 100)}
+    return &Config{Nodes : make([]*AddressInfo, 0, 2)}
 }
 
 func NewAddressInfo(ip string, port int) *AddressInfo {
@@ -34,19 +39,17 @@ func NewAddressInfo(ip string, port int) *AddressInfo {
 }
 
 func (self *Config) ReFileWithHardcodedValues() {
-    self.SSConfig = SignalServerConfig{ListenPort:30001}
-    
-    self.Nodes      = make([]*AddressInfo, 0, 2)
-    self.Signals    = make([]*AddressInfo, 0, 2)
-    self.SSCommands = make([]string, 0, 2)
+    self.SSConfig  = SignalServerConfig{ListenPort:30001}
+    self.SSCommand = SignalServerRequestStringConfig{RegMe : "regme", ListAll : "listall"}
 
+    self.Nodes      = make([]*AddressInfo, 0, 2)
     self.Nodes      = append(self.Nodes, NewAddressInfo("127.0.0.1", 30001))
     self.Nodes      = append(self.Nodes, NewAddressInfo("I am bad IP", 666))
+
+    self.Signals    = make([]*AddressInfo, 0, 2)
     self.Signals    = append(self.Signals, NewAddressInfo("127.0.0.1", 30001))
     self.Signals    = append(self.Signals, NewAddressInfo("I am bad IP", 666))
-    self.SSCommands = append(self.SSCommands, "listall")
-    self.SSCommands = append(self.SSCommands, "regme")
-
+    
     bdata, err := json.MarshalIndent(self, "  ", "\t")
     if err != nil {
         log.Fatal(err.Error())
