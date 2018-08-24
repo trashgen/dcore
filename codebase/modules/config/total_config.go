@@ -24,7 +24,13 @@ type AddressInfo struct {
     Port int
 }
 
+type NodeInfo struct {
+    RegisterListenPort      int
+    RequestActiveNodesCount int
+}
+
 type TotalConfig struct {
+    Node            NodeInfo
     Nodes        []*AddressInfo
     Signals      []*AddressInfo
     SSConfig        SignalServerConfig
@@ -75,6 +81,7 @@ func (self *TotalConfig) BuildCheckURL() string {
 
 func (self *TotalConfig) ReFileWithHardcodedValues() {
     self.SecretMD5Phrase = "operation cwal"
+    self.Node      = NodeInfo{RegisterListenPort:54781}
     self.SSConfig  = SignalServerConfig{ListenPort:30001}
     self.SSCommand = SignalServerRequestStringConfig{Remove : "remove", ListAll : "listall", Check : "check"}
 
