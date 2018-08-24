@@ -10,8 +10,9 @@ import (
 )
 
 type SignalServerRequestStringConfig struct {
+    Check   string
+    Remove  string
     ListAll string
-    RegMe   string
 }
 
 type SignalServerConfig struct {
@@ -24,10 +25,11 @@ type AddressInfo struct {
 }
 
 type TotalConfig struct {
-    Nodes      []*AddressInfo
-    Signals    []*AddressInfo
-    SSConfig      SignalServerConfig
-    SSCommand     SignalServerRequestStringConfig
+    Nodes        []*AddressInfo
+    Signals      []*AddressInfo
+    SSConfig        SignalServerConfig
+    SSCommand       SignalServerRequestStringConfig
+    SecretMD5Phrase string
 }
 
 func NewTotalConfig() *TotalConfig {
@@ -63,13 +65,18 @@ func (self *TotalConfig) BuildListAllURL() string {
     return fmt.Sprintf("/%s", self.SSCommand.ListAll)
 }
 
-func (self *TotalConfig) BuildRegMeURL() string {
-    return fmt.Sprintf("/%s", self.SSCommand.RegMe)
+func (self *TotalConfig) BuildRemoveURL() string {
+    return fmt.Sprintf("/%s", self.SSCommand.Remove)
+}
+
+func (self *TotalConfig) BuildCheckURL() string {
+    return fmt.Sprintf("/%s", self.SSCommand.Check)
 }
 
 func (self *TotalConfig) ReFileWithHardcodedValues() {
+    self.SecretMD5Phrase = "operation cwal"
     self.SSConfig  = SignalServerConfig{ListenPort:30001}
-    self.SSCommand = SignalServerRequestStringConfig{RegMe : "regme", ListAll : "listall"}
+    self.SSCommand = SignalServerRequestStringConfig{Remove : "remove", ListAll : "listall", Check : "check"}
 
     self.Nodes      = make([]*AddressInfo, 0, 2)
     self.Nodes      = append(self.Nodes, NewAddressInfo("127.0.0.1", 30001))

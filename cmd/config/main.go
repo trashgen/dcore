@@ -1,7 +1,7 @@
 package main
 
 import (
-    dcconf "dcore/codebase/config"
+    dcconf "dcore/codebase/modules/config"
 )
 
 func main() {
