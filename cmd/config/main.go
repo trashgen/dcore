@@ -7,4 +7,5 @@ import (
 func main() {
     config := dcconf.NewTotalConfig()
     config.ReFileWithHardcodedValues()
+    config.SaveConfig()
 }

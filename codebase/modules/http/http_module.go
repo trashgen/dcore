@@ -12,19 +12,18 @@ import (
     "encoding/hex"
     md52 "crypto/md5"
     dcconf "dcore/codebase/modules/config"
-    dcmod "dcore/codebase/modules/misc"
 )
 
 type Handler func(w http.ResponseWriter, r *http.Request)
 
 type HTTPModule struct {
-    Nodes  map[string]*dcmod.NodeID
+    Nodes  map[string]*NodeID
     config *dcconf.TotalConfig
 }
 
 func NewHTTPModule(config *dcconf.TotalConfig) *HTTPModule {
     return &HTTPModule{
-        Nodes  : make(map[string]*dcmod.NodeID),
+        Nodes  : make(map[string]*NodeID),
         config : config}
 }
 
@@ -84,7 +83,7 @@ func handleListall(module *HTTPModule, query string) func(w http.ResponseWriter,
         io.WriteString(w, toSend)
 
         ip, port := module.splitRemoteAddress(r.RemoteAddr)
-        module.Nodes[requestorMDKey] = dcmod.NewNodeID(requestorMDKey, ip, port)
+        module.Nodes[requestorMDKey] = NewNodeID(requestorMDKey, ip, port)
     }
 }
 

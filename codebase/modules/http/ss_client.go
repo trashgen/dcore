@@ -1,4 +1,4 @@
-package view
+package http
 
 import (
     "fmt"
@@ -10,15 +10,14 @@ import (
     "strings"
     "net/http"
     "io/ioutil"
-    dcmod "dcore/codebase/modules/misc"
-    dcmisc "dcore/codebase/modules/misc"
+    dcmisc "dcore/codebase/modules/util"
     dcconf "dcore/codebase/modules/config"
 )
 
 type ResponseMapper func(body string) interface{}
 
-type ViewModule struct {
-    Nodes         map[string]*dcmod.NodeID
+type SSClient struct {
+    Nodes         map[string]*NodeID
     client        *http.Client
     config        *dcconf.TotalConfig
     mapCheckRaw   ResponseMapper
@@ -26,15 +25,15 @@ type ViewModule struct {
     mapListallRaw ResponseMapper
 }
 
-func NewViewModule(config *dcconf.TotalConfig) *ViewModule {
+func NewSSClient(config *dcconf.TotalConfig) *SSClient {
     stdHTTPClient := &http.Client{
         Timeout   : time.Second * 11,
         Transport : &http.Transport {
             DisableKeepAlives   : true,
             DisableCompression  : false,
             TLSHandshakeTimeout : time.Second * 11}}
-    return &ViewModule{
-        Nodes         : make(map[string]*dcmod.NodeID),
+    return &SSClient{
+        Nodes         : make(map[string]*NodeID),
         client        : stdHTTPClient,
         config        : config,
         mapCheckRaw   : checkResponseHandler,
@@ -42,7 +41,7 @@ func NewViewModule(config *dcconf.TotalConfig) *ViewModule {
         mapListallRaw : listallResponseHandler}
 }
 
-func (this *ViewModule) GetRawContent(method string, param string) string {
+func (this *SSClient) GetRawContent(method string, param string) string {
     url, err := this.buildURL(method, param)
     if err != nil {
         log.Fatalf("Bad cmd params:\n\tmethod = [%s]\n\tQueryParam = [%s]\n", method, param)
@@ -56,9 +55,9 @@ func (this *ViewModule) GetRawContent(method string, param string) string {
     return out
 }
 
-func (this *ViewModule) MapListall(body string) *dcmisc.RequestListall {
+func (this *SSClient) MapListall(body string) *ResponseListall {
     rawResult := this.mapListallRaw(body)
-    out, ok := rawResult.(*dcmisc.RequestListall)
+    out, ok := rawResult.(*ResponseListall)
     if ! ok {
         log.Fatal("mapListall: inner error")
     }
@@ -66,9 +65,9 @@ func (this *ViewModule) MapListall(body string) *dcmisc.RequestListall {
     return out
 }
 
-func (this *ViewModule) MapRemove(body string) *dcmisc.RequestRemove {
+func (this *SSClient) MapRemove(body string) *ResponseRemove {
     rawResult := this.mapRemoveRaw(body)
-    out, ok := rawResult.(*dcmisc.RequestRemove)
+    out, ok := rawResult.(*ResponseRemove)
     if ! ok {
         log.Fatal("mapRemove: inner error")
     }
@@ -76,9 +75,9 @@ func (this *ViewModule) MapRemove(body string) *dcmisc.RequestRemove {
     return out
 }
 
-func (this *ViewModule) MapCheck(body string) *dcmisc.RequestCheck {
+func (this *SSClient) MapCheck(body string) *ResponseCheck {
     rawResult := this.mapCheckRaw(body)
-    out, ok := rawResult.(*dcmisc.RequestCheck)
+    out, ok := rawResult.(*ResponseCheck)
     if ! ok {
         log.Fatal("mapCheck: inner error")
     }
@@ -86,7 +85,7 @@ func (this *ViewModule) MapCheck(body string) *dcmisc.RequestCheck {
     return out
 }
 
-func (this *ViewModule) buildURL(method string, param string) (string, error) {
+func (this *SSClient) buildURL(method string, param string) (string, error) {
     switch method {
         case this.config.SSCommand.ListAll:
             return this.buildListallURL(param), nil
@@ -99,7 +98,7 @@ func (this *ViewModule) buildURL(method string, param string) (string, error) {
     return "", errors.New(fmt.Sprintf("bad method [%s", method))
 }
 
-func (this *ViewModule) getResponseBody(url string) (string, error) {
+func (this *SSClient) getResponseBody(url string) (string, error) {
     resp, err := this.client.Get(url)
     if resp != nil {
         defer resp.Body.Close()
@@ -117,23 +116,24 @@ func (this *ViewModule) getResponseBody(url string) (string, error) {
     return string(bodyBytes), nil
 }
 
-func (this *ViewModule) buildListallURL(param string) string {
+func (this *SSClient) buildListallURL(param string) string {
     return fmt.Sprintf("http://127.0.0.1:30001/%s?%s=%s", this.config.SSCommand.ListAll, "count", param)
 }
 
-func (this *ViewModule) buildRemoveURL(param string) string {
+func (this *SSClient) buildRemoveURL(param string) string {
     return fmt.Sprintf("http://127.0.0.1:30001/%s?%s=%s", this.config.SSCommand.Remove, "key", param)
 }
 
-func (this *ViewModule) buildCheckURL(param string) string {
+func (this *SSClient) buildCheckURL(param string) string {
     return fmt.Sprintf("http://127.0.0.1:30001/%s?%s=%s", this.config.SSCommand.Check, "key", param)
 }
 
 func listallResponseHandler(body string) interface{} {
+    // TODO : не добавлять в список VIEW !!!!!!!!!!!
     params := strings.Split(body, "\n")
-    out := &dcmisc.RequestListall {
+    out := &ResponseListall{
         RequestorID : params[0],
-        Nodes       : make(map[string]*dcmisc.NodeID)}
+        Nodes       : make(map[string]*NodeID)}
     scanner := bufio.NewScanner(strings.NewReader(params[1]))
     scanner.Split(dcmisc.SplitTabs)
     for scanner.Scan() {
@@ -143,7 +143,7 @@ func listallResponseHandler(body string) interface{} {
             log.Fatalf("mapListallBody: %s\n", err.Error())
         }
         
-        out.Nodes[nodeIDRawData[0]] = dcmisc.NewNodeID(nodeIDRawData[0], nodeIDRawData[1], port)
+        out.Nodes[nodeIDRawData[0]] = NewNodeID(nodeIDRawData[0], nodeIDRawData[1], port)
     }
     return out
 }
@@ -155,7 +155,7 @@ func removeResponseHandler(body string) interface{} {
         log.Fatal("removeResponseHandler: inner error\n")
     }
 
-    return &dcmisc.RequestRemove{OpResult:opResult}
+    return &ResponseRemove{OpResult:opResult}
 }
 
 func checkResponseHandler(body string) interface{} {
@@ -165,5 +165,5 @@ func checkResponseHandler(body string) interface{} {
         log.Fatal("checkResponseHandler: inner error\n")
     }
     
-    return &dcmisc.RequestCheck{OpResult:opResult}
+    return &ResponseCheck{OpResult:opResult}
 }

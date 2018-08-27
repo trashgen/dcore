@@ -6,8 +6,7 @@ import (
     "flag"
     "strconv"
     "strings"
-    dcmisc "dcore/codebase/modules/misc"
-    dcview "dcore/codebase/modules/view"
+    dchttp "dcore/codebase/modules/http"
     dcconf "dcore/codebase/modules/config"
 )
 
@@ -17,7 +16,7 @@ func main() {
 
     method, param := getCmdParams(config)
 
-    httpClient := dcview.NewViewModule(config)
+    httpClient := dchttp.NewSSClient(config)
     data := httpClient.GetRawContent(method, param)
 
     switch method {
@@ -38,7 +37,7 @@ func getCmdParams(config *dcconf.TotalConfig) (string, string) {
     return *method, *queryParam
 }
 
-func printListall(response *dcmisc.RequestListall) {
+func printListall(response *dchttp.ResponseListall) {
     sb := strings.Builder{}
     sb.WriteString(fmt.Sprintf("Listall:\n"))
     for _, nodeID := range response.Nodes {
@@ -50,14 +49,14 @@ func printListall(response *dcmisc.RequestListall) {
     log.Print(sb.String())
 }
 
-func printRemove(response *dcmisc.RequestRemove) {
+func printRemove(response *dchttp.ResponseRemove) {
     sb := strings.Builder{}
     sb.WriteString(fmt.Sprintf("Remove:\n"))
     sb.WriteString(fmt.Sprintf("\tOpResult = [%s]\n", strconv.FormatBool(response.OpResult)))
     log.Print(sb.String())
 }
 
-func printCheck(response *dcmisc.RequestCheck) {
+func printCheck(response *dchttp.ResponseCheck) {
     sb := strings.Builder{}
     sb.WriteString(fmt.Sprintf("Check:\n"))
     sb.WriteString(fmt.Sprintf("\tOpResult = [%s]\n", strconv.FormatBool(response.OpResult)))

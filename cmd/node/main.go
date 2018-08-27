@@ -10,9 +10,8 @@ func main() {
     config.LoadConfig()
 
     node := dcp2p.NewNodeModule(config)
-    // Эта последовательность методов гарантирует, что хост регистраций успеет подняться.
-    go node.StartRegHost()
-    node.GetActiveNodeList()
+    node.StartBuildingP2P()
 
-    select{}
+    //node.ProcessWork()
+    select {}
 }

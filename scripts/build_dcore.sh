@@ -3,15 +3,18 @@ PATH_TO_DISTRIB=../../../bin/dcore
 echo create folders for distrib
 mkdir -p $PATH_TO_DISTRIB/config
 echo success
-echo building...
+echo building 'config' ...
 go build -o $PATH_TO_DISTRIB/config.exe ../cmd/config/
-echo 'config' built successfully
+echo successfully
+echo building 'view' ...
 go build -o $PATH_TO_DISTRIB/view.exe ../cmd/view/
-echo 'view' built successfully
+echo successfully
+echo building 'signal' ...
 go build -o $PATH_TO_DISTRIB/signal.exe ../cmd/signal/
-echo 'signal' built successfully
+echo successfully
+echo building 'node' ...
 go build -o $PATH_TO_DISTRIB/node.exe ../cmd/node/
-echo 'node' built successfully
+echo successfully
 # echo generating base config...
 # config can create cfg file with cmd but not with mingw. WTF !?
 # $PATH_TO_DISTRIB/config.exe
