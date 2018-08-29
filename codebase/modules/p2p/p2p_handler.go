@@ -1,3 +1,5 @@
+// +build ignore
+
 package p2p
 
 import (
@@ -8,7 +10,7 @@ import (
     "strconv"
     "strings"
     dchttp "dcore/codebase/modules/http"
-    dcutil "dcore/codebase/modules/util"
+    dcutil "dcore/codebase/modules/misc"
     dcconf "dcore/codebase/modules/config"
 )
 

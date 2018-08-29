@@ -1,3 +1,5 @@
+// +build ignore
+
 package http
 
 import (
@@ -10,7 +12,7 @@ import (
     "strings"
     "net/http"
     "io/ioutil"
-    dcmisc "dcore/codebase/modules/util"
+    dcmisc "dcore/codebase/modules/misc"
     dcconf "dcore/codebase/modules/config"
 )
 

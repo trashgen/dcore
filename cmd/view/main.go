@@ -1,13 +1,13 @@
+// +build ignore
+
 package main
 
 import (
+    "flag"
+    "strings"
     "fmt"
     "log"
-    "flag"
     "strconv"
-    "strings"
-    dchttp "dcore/codebase/modules/http"
-    dcconf "dcore/codebase/modules/config"
 )
 
 func main() {
