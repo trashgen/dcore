@@ -15,5 +15,5 @@ func main() {
 
     node := dcp2p.NewNodeModule(config)
     node.Connect()
-    node.StartRegHost()
+    node.Start()
 }
