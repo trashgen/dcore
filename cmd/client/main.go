@@ -12,8 +12,13 @@ func main() {
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
+    
+    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+    if ! ok {
+        log.Fatal("Config: type mismatch")
+    }
 
-    httpClient := dchttp.NewClientModule(config)
+    httpClient := dchttp.NewClientModule(config, cmdConfig)
     data := httpClient.RequestRoot()
     log.Print("================ TESTING HTTP ================\n")
     log.Printf("Response Root is\n[%s]\n", data)

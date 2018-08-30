@@ -14,6 +14,7 @@ go build -o $PATH_TO_DISTRIB/node.exe ../cmd/node/
 echo successfully
 echo configuring...
 $PATH_TO_DISTRIB/config.exe
+mv httpcmdconfig.cfg $PATH_TO_DISTRIB/httpcmdconfig.cfg
 mv clientconfig.cfg $PATH_TO_DISTRIB/clientconfig.cfg
 mv pointconfig.cfg $PATH_TO_DISTRIB/pointconfig.cfg
 mv nodeconfig.cfg $PATH_TO_DISTRIB/nodeconfig.cfg

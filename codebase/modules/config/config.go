@@ -8,13 +8,15 @@ type MetaConfig struct {
     NodeConfigFileName   string
     PointConfigFileName  string
     ClientConfigFileName string
+    HTTPCommandsFileName string
 }
 
 func NewMetaConfig() *MetaConfig {
     return &MetaConfig{
         NodeConfigFileName   : "nodeconfig.cfg",
         PointConfigFileName  : "pointconfig.cfg",
-        ClientConfigFileName : "clientconfig.cfg"}
+        ClientConfigFileName : "clientconfig.cfg",
+        HTTPCommandsFileName : "httpcmdconfig.cfg"}
 }
 
 func (this *MetaConfig) String() string {
@@ -44,19 +46,39 @@ func (this *NodeConfig) String() string {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO : Разместить в отдельном файле чтоб все если с одной миски!!!!
 type CommandDesc struct {
     Name  string
     Param string
 }
 
+type HTTPCommands struct {
+    Reg      CommandDesc
+    Look     CommandDesc
+    Root     CommandDesc
+    Check    CommandDesc
+    Points   CommandDesc
+    Remove   CommandDesc
+    fileName string
+}
+
+func NewHTTPCommands(meta *MetaConfig) *HTTPCommands {
+    return &HTTPCommands{
+        Reg          : CommandDesc{Name:"reg", Param:"address"},
+        Look         : CommandDesc{Name:"look", Param:"count"},
+        Root         : CommandDesc{Name:""},
+        Check        : CommandDesc{Name:"check", Param:"key"},
+        Points       : CommandDesc{Name:"points", Param:"count"},
+        Remove       : CommandDesc{Name:"remove", Param:"key"},
+        fileName     : meta.HTTPCommandsFileName}
+}
+
+func (this *HTTPCommands) String() string {
+    return this.fileName
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 type PointConfig struct {
-    Reg          CommandDesc
-    Look         CommandDesc
-    Root         CommandDesc
-    Check        CommandDesc
-    Points       CommandDesc
-    Remove       CommandDesc
     fileName     string
     ListenPort   int
     SecretPhrase string
@@ -64,12 +86,6 @@ type PointConfig struct {
 
 func NewPointConfig(meta *MetaConfig) *PointConfig {
     return &PointConfig{
-        Reg          : CommandDesc{Name:"reg", Param:"address"},
-        Look         : CommandDesc{Name:"look", Param:"count"},
-        Root         : CommandDesc{Name:""},
-        Check        : CommandDesc{Name:"check", Param:"key"},
-        Points       : CommandDesc{Name:"points", Param:"count"},
-        Remove       : CommandDesc{Name:"remove", Param:"key"},
         ListenPort   : 30001,
         SecretPhrase : "operation cwal (C) Starcraft",
         fileName     : meta.PointConfigFileName}
@@ -86,12 +102,6 @@ func (this *PointConfig) String() string {
 ///////////////////////////////////////////////////////////////////////////////
 
 type ClientConfig struct {
-    Reg         CommandDesc
-    Look        CommandDesc
-    Root        CommandDesc
-    Check       CommandDesc
-    Points      CommandDesc
-    Remove      CommandDesc
     EntryPoints []string
     fileName    string
 }
@@ -99,16 +109,8 @@ type ClientConfig struct {
 func NewClientConfig(meta *MetaConfig) *ClientConfig {
     points := make([]string, 0)
     points = append(points, "http://localhost:30001")
-    
-    return &ClientConfig{
-        Reg         : CommandDesc{Name:"reg", Param:"address"},
-        Look        : CommandDesc{Name:"look", Param:"count"},
-        Root        : CommandDesc{Name:""},
-        Check       : CommandDesc{Name:"check", Param:"key"},
-        Points      : CommandDesc{Name:"points", Param:"count"},
-        Remove      : CommandDesc{Name:"remove", Param:"key"},
-        EntryPoints : points,
-        fileName    : meta.ClientConfigFileName}
+
+    return &ClientConfig{EntryPoints : points, fileName : meta.ClientConfigFileName}
 }
 
 func (this *ClientConfig) String() string {

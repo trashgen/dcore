@@ -25,6 +25,7 @@ type NodeModule struct {
     config        *dcconf.NodeConfig
     newConn       chan net.Conn // RegHost struct
     regHost       net.Listener  // RegHost struct
+    cmdConfig     *dcconf.HTTPCommands
     removeConn    chan net.Conn // RegHost struct
     clientConfig  *dcconf.ClientConfig
     otherRegHosts []*NodeDesc
@@ -46,16 +47,22 @@ func NewNodeModule(config *dcconf.NodeConfig) *NodeModule {
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
-    
+
+    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+    if ! ok {
+        log.Fatal("Config: type mismatch")
+    }
+
     out := &NodeModule{
         nodes         : make(map[string]*NodeDesc),
         config        : config,
         newConn       : make(chan net.Conn),
+        cmdConfig     : cmdConfig,
         removeConn    : make(chan net.Conn),
         clientConfig  : clientConfig,
         otherRegHosts : make([]*NodeDesc, 0, config.MaxP2PConnections)}
 
-    out.parseLookRequest(dchttp.NewClientModule(clientConfig).RequestLook(1, config.MaxP2PConnections))
+    out.parseLookRequest(dchttp.NewClientModule(clientConfig, cmdConfig).RequestLook(1, config.MaxP2PConnections))
     return out
 }
 
@@ -127,7 +134,7 @@ func (this *NodeModule) StartRegHost() {
         log.Fatalf("All reg port are busy [%d..%d]. Do something!\n", this.config.MinRegPort, this.config.MaxRegPort)
     }
 
-    this.Key = dchttp.NewClientModule(this.clientConfig).RequestReg(fmt.Sprintf("localhost:%d", port))
+    this.Key = dchttp.NewClientModule(this.clientConfig, this.cmdConfig).RequestReg(fmt.Sprintf("localhost:%d", port))
     this.onNewConnection()
     this.onRemoveConnection()
 

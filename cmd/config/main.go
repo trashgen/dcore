@@ -11,4 +11,5 @@ func main() {
     dcutil.SaveJSONConfig(dcconf.NewPointConfig(metaConfig))
     dcutil.SaveJSONConfig(dcconf.NewClientConfig(metaConfig))
     dcutil.SaveJSONConfig(dcconf.NewNodeConfig(metaConfig))
+    dcutil.SaveJSONConfig(dcconf.NewHTTPCommands(metaConfig))
 }

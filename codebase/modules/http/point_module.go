@@ -14,17 +14,19 @@ import (
 )
 
 type Point struct {
-    id     string
-    nodes  map[string]*dcutil.ConnectionID
-    config *dcconf.PointConfig
-    points map[string]*dcutil.ConnectionID // not used now
+    id        string
+    nodes     map[string]*dcutil.ConnectionID
+    config    *dcconf.PointConfig
+    points    map[string]*dcutil.ConnectionID // not used now
+    cmdConfig *dcconf.HTTPCommands
 }
 
-func NewPoint(config *dcconf.PointConfig) *Point {
+func NewPoint(config *dcconf.PointConfig, cmdConfig *dcconf.HTTPCommands) *Point {
     out := &Point{
-        nodes  : make(map[string]*dcutil.ConnectionID, 16),
-        points : make(map[string]*dcutil.ConnectionID, 16),
-        config : config}
+        nodes     : make(map[string]*dcutil.ConnectionID, 16),
+        points    : make(map[string]*dcutil.ConnectionID, 16),
+        config    : config,
+        cmdConfig : cmdConfig}
 
     return out
 }
@@ -38,17 +40,17 @@ func (this *Point) Start() {
 func (this *Point) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     log.Printf("Got request [%s] - [%s]\n", r.URL.Path, r.URL.RawQuery)
     switch r.URL.Path[1:] {
-        case this.config.Reg.Name:
+        case this.cmdConfig.Reg.Name:
             this.responseToReg(w, r.RemoteAddr, r.URL.RawQuery)
-        case this.config.Look.Name:
+        case this.cmdConfig.Look.Name:
             this.responseToLook(w, r.URL.RawQuery)
-        case this.config.Root.Name:
+        case this.cmdConfig.Root.Name:
             this.responseToRoot(w, r.URL.RawQuery)
-        case this.config.Check.Name:
+        case this.cmdConfig.Check.Name:
             this.responseToCheck(w, r.URL.RawQuery)
-        case this.config.Points.Name:
+        case this.cmdConfig.Points.Name:
             this.responseToPoints(w, r.URL.RawQuery)
-        case this.config.Remove.Name:
+        case this.cmdConfig.Remove.Name:
             this.responseToRemove(w, r.URL.RawQuery)
         default:
             log.Printf("ServeHTTP - Bad HTTP Command: [%s]", r.URL.Path[1:])
@@ -67,8 +69,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
         return
     }
 
-    log.Printf("responseToReg - [%s] - [%s]\n", this.config.Reg.Name, this.config.Reg.Param)
-    request, err := dcmisc.SplitRequestReg(this.config.Reg.Param, queryParams)
+    request, err := dcmisc.SplitRequestReg(this.cmdConfig.Reg.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))
@@ -86,7 +87,7 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
     
-    request, err := dcmisc.SplitRequestLook(this.config.Look.Param, queryParams)
+    request, err := dcmisc.SplitRequestLook(this.cmdConfig.Look.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))
@@ -119,11 +120,11 @@ func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
     sb := strings.Builder{}
     sb.WriteString("<h1>Point help:</h1>")
     sb.WriteString("<b>Root page</b>: You are here now<br>")
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to register on Point. No query params. Key (string) as result<br>", this.config.Reg.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Nodes. If query param 'count' here with (int) > 0 as value - then limit number of Nodes to send in Response<br>", this.config.Look.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to check if Node is registered at this Point. Key (string) as query param required<br>", this.config.Check.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Points. If query param 'count' here with (int) > 0 as value - then limit number of Points to send in Response<br>", this.config.Points.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to remove Node. Key (string) as query param required<br>", this.config.Remove.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to register on Point. No query params. Key (string) as result<br>", this.cmdConfig.Reg.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Nodes. If query param 'count' here with (int) > 0 as value - then limit number of Nodes to send in Response<br>", this.cmdConfig.Look.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to check if Node is registered at this Point. Key (string) as query param required<br>", this.cmdConfig.Check.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Points. If query param 'count' here with (int) > 0 as value - then limit number of Points to send in Response<br>", this.cmdConfig.Points.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to remove Node. Key (string) as query param required<br>", this.cmdConfig.Remove.Name))
 
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
@@ -141,7 +142,7 @@ func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    request, err := dcmisc.SplitRequestCheck(this.config.Check.Param, queryParams)
+    request, err := dcmisc.SplitRequestCheck(this.cmdConfig.Check.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))
@@ -161,7 +162,7 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
 
-    request, err := dcmisc.SplitRequestPoints(this.config.Points.Param, queryParams)
+    request, err := dcmisc.SplitRequestPoints(this.cmdConfig.Points.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))
@@ -197,7 +198,7 @@ func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
         return
     }
     
-    request, err := dcmisc.SplitRequestRemove(this.config.Remove.Param, queryParams)
+    request, err := dcmisc.SplitRequestRemove(this.cmdConfig.Remove.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))

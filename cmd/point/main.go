@@ -13,5 +13,10 @@ func main() {
         log.Fatal("Config: type mismatch")
     }
 
-    dchttp.NewPoint(config).Start()
+    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+    if ! ok {
+        log.Fatal("Config: type mismatch")
+    }
+
+    dchttp.NewPoint(config, cmdConfig).Start()
 }

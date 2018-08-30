@@ -10,22 +10,23 @@ import (
 )
 
 type ClientModule struct {
-    client *http.Client
-    config *dcconf.ClientConfig
+    client    *http.Client
+    config    *dcconf.ClientConfig
+    cmdConfig *dcconf.HTTPCommands
 }
 
-func NewClientModule(config *dcconf.ClientConfig) *ClientModule {
+func NewClientModule(config *dcconf.ClientConfig, cmdConfig *dcconf.HTTPCommands) *ClientModule {
     stdHTTPClient := &http.Client{
         Timeout   : time.Second * 11,
         Transport : &http.Transport {
             DisableKeepAlives   : true,
             DisableCompression  : false,
             TLSHandshakeTimeout : time.Second * 11}}
-    return &ClientModule{client:stdHTTPClient, config:config}
+    return &ClientModule{client:stdHTTPClient, config:config, cmdConfig:cmdConfig}
 }
 
 func (this *ClientModule) RequestReg(address string) string {
-    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Reg, address)
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Reg, address)
     response, err := this.getRawContent(url)
     if err != nil {
         err := fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error())
@@ -42,9 +43,9 @@ func (this *ClientModule) RequestLook(maxPoints int, count int) string {
     urls := make([]string, 0, maxPoints)
     for i := 0; i < maxPoints; i++ {
         if count == 0 {
-            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.config.Look))
+            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.cmdConfig.Look))
         } else {
-            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.config.Look, count))
+            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.cmdConfig.Look, count))
         }
     }
 
@@ -69,9 +70,9 @@ func (this *ClientModule) RequestPoints(maxPoints int, count int) string {
     urls := make([]string, 0, maxPoints)
     for i := 0; i < maxPoints; i++ {
         if count == 0 {
-            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.config.Points))
+            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.cmdConfig.Points))
         } else {
-            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.config.Points, count))
+            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.cmdConfig.Points, count))
         }
     }
     
@@ -92,7 +93,7 @@ func (this *ClientModule) RequestPoints(maxPoints int, count int) string {
 }
 
 func (this *ClientModule) RequestRoot() string {
-    url := buildURLNoParams(this.config.EntryPoints[0], &this.config.Root)
+    url := buildURLNoParams(this.config.EntryPoints[0], &this.cmdConfig.Root)
     response, err := this.getRawContent(url)
     if err != nil {
         err := fmt.Sprintf("Error by getting response 'Root' from Point [%s]: [%s]\n", url, err.Error())
@@ -105,7 +106,7 @@ func (this *ClientModule) RequestRoot() string {
 }
 
 func (this *ClientModule) RequestCheck(key string) string {
-    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Check, key)
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Check, key)
     response, err := this.getRawContent(url)
     if err != nil {
         err := fmt.Sprintf("Error by getting response 'Check' from Point [%s]: [%s]\n", url, err.Error())
@@ -120,7 +121,7 @@ func (this *ClientModule) RequestCheck(key string) string {
 }
 
 func (this *ClientModule) RequestRemove(key string) string {
-    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Remove, key)
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Remove, key)
     response, err := this.getRawContent(url)
     if err != nil {
         err := fmt.Sprintf("Error by getting response 'Remove' from Point [%s]: [%s]\n", url, err.Error())
