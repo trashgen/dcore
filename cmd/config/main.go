@@ -10,4 +10,5 @@ func main() {
     dcutil.SaveJSONConfig(metaConfig)
     dcutil.SaveJSONConfig(dcconf.NewPointConfig(metaConfig))
     dcutil.SaveJSONConfig(dcconf.NewClientConfig(metaConfig))
+    dcutil.SaveJSONConfig(dcconf.NewNodeConfig(metaConfig))
 }

@@ -24,11 +24,11 @@ func NewClientModule(config *dcconf.ClientConfig) *ClientModule {
     return &ClientModule{client:stdHTTPClient, config:config}
 }
 
-func (this *ClientModule) RequestReg() string {
-    url := buildURLNoParams(this.config.EntryPoints[0], &this.config.Reg)
+func (this *ClientModule) RequestReg(address string) string {
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Reg, address)
     response, err := this.getRawContent(url)
     if err != nil {
-        err := fmt.Sprintf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
+        err := fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error())
         log.Print(err)
         
         return err

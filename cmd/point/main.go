@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-    // TODO : 'configFileName' to metaconfig
     config, ok := dcutil.LoadJSONConfig(dcconf.NewPointConfig(dcconf.NewMetaConfig())).(*dcconf.PointConfig)
     if ! ok {
         log.Fatal("Config: type mismatch")

@@ -1,13 +1,18 @@
 package util
 
 type ConnectionID struct {
-    IP   string
-    Key  string
-    Port int
+    Key     string
+    Address string
 }
 
+func NewConnectionID(key string, address string) *ConnectionID {
+    return &ConnectionID{Key:key, Address:address}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 type RequestReg struct {
-    Count int
+    Address string
 }
 
 type ResponseReg struct {

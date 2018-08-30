@@ -19,7 +19,7 @@ func main() {
     log.Printf("Response Root is\n[%s]\n", data)
     data = httpClient.RequestLook(1, 3)
     log.Printf("Response Look is\n[%s]\n", data)
-    data = httpClient.RequestReg()
+    data = httpClient.RequestReg("tratata")
     log.Printf("Response Reg is\n[%s]\n", data)
     data = httpClient.RequestCheck("nodeKey1")
     log.Printf("Response Check is\n[%s]\n", data)

@@ -25,10 +25,6 @@ func NewPoint(config *dcconf.PointConfig) *Point {
         nodes  : make(map[string]*dcutil.ConnectionID, 16),
         points : make(map[string]*dcutil.ConnectionID, 16),
         config : config}
-    out.nodes["nodeKey1"] = &dcutil.ConnectionID{Key:"nodeKey1", Port:13, IP:"127.0.0.1"}
-    out.nodes["nodeKey2"] = &dcutil.ConnectionID{Key:"nodeKey2", Port:13, IP:"127.0.0.1"}
-    out.points["pointKey1"] = &dcutil.ConnectionID{Key:"pointKey1", Port:666, IP:"127.0.0.721"}
-    out.points["pointKey2"] = &dcutil.ConnectionID{Key:"pointKey2", Port:666, IP:"127.0.0.721"}
 
     return out
 }
@@ -60,13 +56,30 @@ func (this *Point) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, queryParams string) {
-    if len(queryParams) > 0 {
-        log.Printf("Reg: ignore query params: [%s]\n", queryParams)
-    }
-
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
-    w.Write([]byte(fmt.Sprintf("%s", this.calcMD5Key(remoteAddr))))
+
+    // Nice form just to test
+    if msg := "Reg requires query param 'address'\n"; len(queryParams) == 0 {
+        log.Print(msg)
+        w.Write([]byte(msg))
+
+        return
+    }
+
+    log.Printf("responseToReg - [%s] - [%s]\n", this.config.Reg.Name, this.config.Reg.Param)
+    request, err := dcmisc.SplitRequestReg(this.config.Reg.Param, queryParams)
+    if err != nil {
+        log.Print(err.Error())
+        w.Write([]byte(err.Error()))
+        
+        return
+    }
+
+    key := this.calcMD5Key(remoteAddr)
+    this.nodes[key] = dcutil.NewConnectionID(key, request.Address)
+
+    w.Write([]byte(fmt.Sprintf("%s", key)))
 }
 
 func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
@@ -80,7 +93,7 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
 
         return
     }
-    
+
     realCount := request.Count
     if realCount > len(this.nodes) {
         realCount = len(this.nodes)
@@ -89,7 +102,7 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
     sb := strings.Builder{}
     i := 0
     for _, v := range this.nodes {
-        sb.WriteString(fmt.Sprintf("%s:%s:%d\t", v.Key, v.IP, v.Port))
+        sb.WriteString(fmt.Sprintf("%s:%s\t", v.Key, v.Address))
         if i++; i == realCount {
             break
         }
@@ -120,6 +133,13 @@ func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
 func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
+
+    if msg := "Check requires query param 'key'\n"; len(queryParams) == 0 {
+        log.Print(msg)
+        w.Write([]byte(msg))
+    
+        return
+    }
 
     request, err := dcmisc.SplitRequestCheck(this.config.Check.Param, queryParams)
     if err != nil {
@@ -157,7 +177,7 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
     sb := strings.Builder{}
     i := 0
     for _, v := range this.points {
-        sb.WriteString(fmt.Sprintf("%s:%s:%d\t", v.Key, v.IP, v.Port))
+        sb.WriteString(fmt.Sprintf("%s:%s\t", v.Key, v.Address))
         if i++; i == realCount {
             break
         }
@@ -167,16 +187,24 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
 }
 
 func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
+    w.Header().Set("Connection", "close")
+    w.WriteHeader(http.StatusOK)
+
+    if msg := "Remove requires query param 'key'\n"; len(queryParams) == 0 {
+        log.Print(msg)
+        w.Write([]byte(msg))
+
+        return
+    }
+    
     request, err := dcmisc.SplitRequestRemove(this.config.Remove.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.Write([]byte(err.Error()))
-        
+    
         return
     }
     
-    w.Header().Set("Connection", "close")
-    w.WriteHeader(http.StatusOK)
     _, ok := this.nodes[request.Key]
     if ok {
         delete(this.nodes, request.Key)

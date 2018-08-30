@@ -23,10 +23,28 @@ func (this *MetaConfig) String() string {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// TODO : NodeConfig
+type NodeConfig struct {
+    MinRegPort        int
+    MaxRegPort        int
+    MaxP2PConnections int
+    fileName          string
+}
+
+func NewNodeConfig(meta *MetaConfig) *NodeConfig {
+    return &NodeConfig{
+        MinRegPort        : 33333,
+        MaxRegPort        : 33366,
+        MaxP2PConnections : 16,
+        fileName          : meta.NodeConfigFileName}
+}
+
+func (this *NodeConfig) String() string {
+    return this.fileName
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// TODO : Разместить в отдельном файле чтоб все если с одной миски!!!!
 type CommandDesc struct {
     Name  string
     Param string
@@ -46,7 +64,7 @@ type PointConfig struct {
 
 func NewPointConfig(meta *MetaConfig) *PointConfig {
     return &PointConfig{
-        Reg          : CommandDesc{Name:"reg"},
+        Reg          : CommandDesc{Name:"reg", Param:"address"},
         Look         : CommandDesc{Name:"look", Param:"count"},
         Root         : CommandDesc{Name:""},
         Check        : CommandDesc{Name:"check", Param:"key"},
@@ -81,10 +99,9 @@ type ClientConfig struct {
 func NewClientConfig(meta *MetaConfig) *ClientConfig {
     points := make([]string, 0)
     points = append(points, "http://localhost:30001")
-    points = append(points, "КРОВЬКИШКИРАСПИДОРАСИЛО:11111")
     
     return &ClientConfig{
-        Reg         : CommandDesc{Name:"reg"},
+        Reg         : CommandDesc{Name:"reg", Param:"address"},
         Look        : CommandDesc{Name:"look", Param:"count"},
         Root        : CommandDesc{Name:""},
         Check       : CommandDesc{Name:"check", Param:"key"},

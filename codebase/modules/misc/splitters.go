@@ -26,6 +26,16 @@ func SplitterFunc(splitSymbol byte) (func(data []byte, atEOF bool) (advance int,
     }
 }
 
+func SplitRequestReg(paramName string, queryParams string) (*dcutil.RequestReg, error) {
+    paramsMap := SplitQueryParams(queryParams)
+    value, ok := paramsMap[paramName]
+    if ! ok {
+        return nil, errors.New(fmt.Sprintf("bad 'Reg' Address param key [%s]", paramName))
+    }
+
+    return &dcutil.RequestReg{Address:value}, nil
+}
+
 func SplitRequestLook(paramName string, queryParams string) (*dcutil.RequestLook, error) {
     if len(queryParams) == 0 {
         return &dcutil.RequestLook{Count:0}, nil
@@ -46,10 +56,6 @@ func SplitRequestLook(paramName string, queryParams string) (*dcutil.RequestLook
 }
 
 func SplitRequestCheck(paramName string, queryParams string) (*dcutil.RequestCheck, error) {
-    if len(queryParams) == 0 {
-        return nil, errors.New("no query param 'Key' found")
-    }
-    
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
@@ -79,10 +85,6 @@ func SplitRequestPoints(paramName string, queryParams string) (*dcutil.RequestPo
 }
 
 func SplitRequestRemove(paramName string, queryParams string) (*dcutil.RequestRemove, error) {
-    if len(queryParams) == 0 {
-        return nil, errors.New("no query param 'Key' found")
-    }
-    
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
