@@ -1,13 +1,11 @@
 #!/bin/bash
 PATH_TO_DISTRIB=../../../bin/dcore
-echo create folders for distrib
-mkdir -p $PATH_TO_DISTRIB/config
-echo success
 echo building 'config' ...
 go build -o $PATH_TO_DISTRIB/config.exe ../cmd/config/
 echo successfully
-echo building 'view' ...
-go build -o $PATH_TO_DISTRIB/view.exe ../cmd/view/
+$PATH_TO_DISTRIB/config.exe
+echo building 'client' ...
+go build -o $PATH_TO_DISTRIB/client.exe ../cmd/client/
 echo successfully
 echo building 'point' ...
 go build -o $PATH_TO_DISTRIB/point.exe ../cmd/point/

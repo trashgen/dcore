@@ -25,7 +25,7 @@ func NewClientModule(config *dcconf.ClientConfig) *ClientModule {
 }
 
 func (this *ClientModule) RequestReg() string {
-    url := fmt.Sprintf("%s/%s", this.config.EntryPoints[0], this.config.Reg.Name)
+    url := buildURLNoParams(this.config.EntryPoints[0], &this.config.Reg)
     response, err := this.getRawContent(url)
     if err != nil {
         err := fmt.Sprintf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
@@ -37,13 +37,14 @@ func (this *ClientModule) RequestReg() string {
     return fmt.Sprintf("%s\n", response)
 }
 
+// TODO : Look must have 2 var query params
 func (this *ClientModule) RequestLook(maxPoints int, count int) string {
     urls := make([]string, 0, maxPoints)
     for i := 0; i < maxPoints; i++ {
         if count == 0 {
-            urls = append(urls, fmt.Sprintf("%s/%s", this.config.EntryPoints[i], this.config.Look.Name))
+            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.config.Look))
         } else {
-            urls = append(urls, fmt.Sprintf("%s/%s?%s=%d", this.config.EntryPoints[i], this.config.Look.Name, this.config.Look.Param, count))
+            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.config.Look, count))
         }
     }
 
@@ -51,10 +52,10 @@ func (this *ClientModule) RequestLook(maxPoints int, count int) string {
     for _, url := range urls {
         response, err := this.getRawContent(url)
         if err != nil {
-            err := fmt.Sprintf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
-            log.Print(err)
+            errDesc := fmt.Sprintf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
+            log.Print(errDesc)
 
-            return err
+            return errDesc
         }
 
         out += fmt.Sprintf("%s\n", response)
@@ -63,7 +64,75 @@ func (this *ClientModule) RequestLook(maxPoints int, count int) string {
     return out
 }
 
-func (this *ClientModule) getRawContent(url string, ) (string, error) {
+// TODO : Points must have 2 var query params
+func (this *ClientModule) RequestPoints(maxPoints int, count int) string {
+    urls := make([]string, 0, maxPoints)
+    for i := 0; i < maxPoints; i++ {
+        if count == 0 {
+            urls = append(urls, buildURLNoParams(this.config.EntryPoints[i], &this.config.Points))
+        } else {
+            urls = append(urls, buildURLWithParams(this.config.EntryPoints[i], &this.config.Points, count))
+        }
+    }
+    
+    var out string
+    for _, url := range urls {
+        response, err := this.getRawContent(url)
+        if err != nil {
+            errDesc := fmt.Sprintf("Error by getting response 'Points' from Point [%s]: [%s]\n", url, err.Error())
+            log.Print(errDesc)
+            
+            return errDesc
+        }
+        
+        out += fmt.Sprintf("%s\n", response)
+    }
+    
+    return out
+}
+
+func (this *ClientModule) RequestRoot() string {
+    url := buildURLNoParams(this.config.EntryPoints[0], &this.config.Root)
+    response, err := this.getRawContent(url)
+    if err != nil {
+        err := fmt.Sprintf("Error by getting response 'Root' from Point [%s]: [%s]\n", url, err.Error())
+        log.Print(err)
+        
+        return err
+    }
+
+    return fmt.Sprintf("%s\n", response)
+}
+
+func (this *ClientModule) RequestCheck(key string) string {
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Check, key)
+    response, err := this.getRawContent(url)
+    if err != nil {
+        err := fmt.Sprintf("Error by getting response 'Check' from Point [%s]: [%s]\n", url, err.Error())
+        log.Print(err)
+        
+        return err
+    }
+    
+    log.Printf("Ask Check with [%s]\n", url)
+    
+    return fmt.Sprintf("%s\n", response)
+}
+
+func (this *ClientModule) RequestRemove(key string) string {
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.config.Remove, key)
+    response, err := this.getRawContent(url)
+    if err != nil {
+        err := fmt.Sprintf("Error by getting response 'Remove' from Point [%s]: [%s]\n", url, err.Error())
+        log.Print(err)
+        
+        return err
+    }
+    
+    return fmt.Sprintf("%s\n", response)
+}
+
+func (this *ClientModule) getRawContent(url string) (string, error) {
     resp, err := this.client.Get(url)
     if resp != nil {
         defer resp.Body.Close()
@@ -79,4 +148,22 @@ func (this *ClientModule) getRawContent(url string, ) (string, error) {
     }
     
     return string(bodyBytes), nil
+}
+
+func buildURLNoParams(pointAddress string, commandDesc *dcconf.CommandDesc) string {
+    return fmt.Sprintf("%s/%s", pointAddress, commandDesc.Name)
+}
+
+func buildURLWithParams(pointAddress string, commandDesc *dcconf.CommandDesc, param interface{}) (out string) {
+    maybeString, ok := param.(string)
+    if ok {
+        return fmt.Sprintf("%s/%s?%s=%s", pointAddress, commandDesc.Name, commandDesc.Param, maybeString)
+    }
+    maybeInt, ok := param.(int)
+    if ok {
+        return fmt.Sprintf("%s/%s?%s=%d", pointAddress, commandDesc.Name, commandDesc.Param, maybeInt)
+    }
+
+    log.Fatalf("URL with bad param [%#v]\n", param)
+    return out
 }

@@ -33,7 +33,14 @@ func NewPoint(config *dcconf.PointConfig) *Point {
     return out
 }
 
+func (this *Point) Start() {
+    if err := http.ListenAndServe(this.config.FormattedListenPort(), this); err != nil {
+        log.Fatalf("Error starting Point: %s", err.Error())
+    }
+}
+
 func (this *Point) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    log.Printf("Got request [%s] - [%s]\n", r.URL.Path, r.URL.RawQuery)
     switch r.URL.Path[1:] {
         case this.config.Reg.Name:
             this.responseToReg(w, r.RemoteAddr, r.URL.RawQuery)
@@ -59,7 +66,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
 
     w.Header().Set("Connection", "close")
     w.WriteHeader(http.StatusOK)
-    w.Write([]byte(fmt.Sprintf("%s\n", this.calcMD5Key(remoteAddr))))
+    w.Write([]byte(fmt.Sprintf("%s", this.calcMD5Key(remoteAddr))))
 }
 
 func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
@@ -88,8 +95,7 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
         }
     }
 
-    toSend := fmt.Sprintf("%s\n", strings.TrimSuffix(sb.String(), "\t"))
-    w.Write([]byte(toSend))
+    w.Write([]byte(strings.TrimSuffix(sb.String(), "\t")))
 }
 
 func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
@@ -157,8 +163,7 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
         }
     }
 
-    toSend := fmt.Sprintf("%s\n", strings.TrimSuffix(sb.String(), "\t"))
-    w.Write([]byte(toSend))
+    w.Write([]byte(strings.TrimSuffix(sb.String(), "\t")))
 }
 
 func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {

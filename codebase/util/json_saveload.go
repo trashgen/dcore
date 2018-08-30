@@ -5,15 +5,16 @@ import (
     "log"
     "io/ioutil"
     "encoding/json"
+    "fmt"
 )
 
-func SaveJSONConfig(fileName string, object interface{}) {
+func SaveJSONConfig(object fmt.Stringer) {
     data, err := json.MarshalIndent(object, "  ", "\t")
     if err != nil {
         log.Fatal(err.Error())
     }
     
-    file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_TRUNC|os.O_CREATE,0666)
+    file, err := os.OpenFile(object.String(), os.O_WRONLY|os.O_TRUNC|os.O_CREATE,0666)
     if err != nil {
         log.Fatal(err.Error())
     }
@@ -25,8 +26,8 @@ func SaveJSONConfig(fileName string, object interface{}) {
     }
 }
 
-func LoadJSONConfig(fileName string, object interface{}) interface{} {
-    file, err := os.OpenFile(fileName, os.O_RDONLY,0666)
+func LoadJSONConfig(object fmt.Stringer) interface{} {
+    file, err := os.OpenFile(object.String(), os.O_RDONLY,0666)
     if err != nil {
         log.Fatal(err.Error())
     }
