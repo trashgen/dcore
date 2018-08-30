@@ -1,64 +1,22 @@
-// +build ignore
-
 package main
 
 import (
-    "flag"
-    "strings"
-    "fmt"
     "log"
-    "strconv"
+    dcutil "dcore/codebase/util"
+    dchttp "dcore/codebase/modules/http"
+    dcconf "dcore/codebase/modules/config"
 )
 
 func main() {
-    config := dcconf.NewTotalConfig()
-    config.LoadConfig()
-
-    method, param := getCmdParams(config)
-
-    httpClient := dchttp.NewSSClient(config)
-    data := httpClient.GetRawContent(method, param)
-
-    switch method {
-        case config.SSCommand.ListAll:
-            printListall(httpClient.MapListall(data))
-        case config.SSCommand.Remove:
-            printRemove(httpClient.MapRemove(data))
-        case config.SSCommand.Check:
-            printCheck(httpClient.MapCheck(data))
+    // TODO : 'configFileName' to metaconfig
+    configFileName := "clientconfig.cfg"
+    config, ok := dcutil.LoadJSONConfig(configFileName, dcconf.NewClientConfig(configFileName)).(*dcconf.ClientConfig)
+    if ! ok {
+        log.Fatal("Config: type mismatch")
     }
-}
 
-func getCmdParams(config *dcconf.TotalConfig) (string, string) {
-    method := flag.String("method", config.SSCommand.ListAll, "only [listall|remove|check]")
-    queryParam := flag.String("param", "0", "respectivly [int|string|string]")
-    flag.Parse()
-
-    return *method, *queryParam
-}
-
-func printListall(response *dchttp.ResponseListall) {
-    sb := strings.Builder{}
-    sb.WriteString(fmt.Sprintf("Listall:\n"))
-    for _, nodeID := range response.Nodes {
-        sb.WriteString(fmt.Sprintf("\tID      = [%s]\n", nodeID.ID))
-        sb.WriteString(fmt.Sprintf("\tAddress = [%s]\n", nodeID.Address))
-        sb.WriteString(fmt.Sprintf("\tPort    = [%d]\n", nodeID.Port))
-        sb.WriteString("\t================================\n")
-    }
-    log.Print(sb.String())
-}
-
-func printRemove(response *dchttp.ResponseRemove) {
-    sb := strings.Builder{}
-    sb.WriteString(fmt.Sprintf("Remove:\n"))
-    sb.WriteString(fmt.Sprintf("\tOpResult = [%s]\n", strconv.FormatBool(response.OpResult)))
-    log.Print(sb.String())
-}
-
-func printCheck(response *dchttp.ResponseCheck) {
-    sb := strings.Builder{}
-    sb.WriteString(fmt.Sprintf("Check:\n"))
-    sb.WriteString(fmt.Sprintf("\tOpResult = [%s]\n", strconv.FormatBool(response.OpResult)))
-    log.Print(sb.String())
+    httpClient := dchttp.NewClientModule(config)
+    //data := httpClient.RequestLook(2, 3)
+    data := httpClient.RequestReg()
+    log.Printf("reg Response is\n[%s]\n", data)
 }
