@@ -1,18 +1,25 @@
-package util
+package http
+
+import "fmt"
 
 type ConnectionID struct {
-    Key     string
-    Address string
+    IP   string
+    Key  string
+    Port int
 }
 
-func NewConnectionID(key string, address string) *ConnectionID {
-    return &ConnectionID{Key:key, Address:address}
+func NewConnectionID(key string, ip string, port int) *ConnectionID {
+    return &ConnectionID{Key:key, IP:ip, Port:port}
+}
+
+func (this ConnectionID) Address() string {
+    return fmt.Sprintf("%s:%d", this.IP, this.Port)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 type RequestReg struct {
-    Address string
+    Port int
 }
 
 type ResponseReg struct {
@@ -51,4 +58,13 @@ type RequestRemove struct {
 
 type RequestCheck struct {
     Key string
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+type Request1013 struct {
+    ID      int
+    Key     string
+    Point   string
+    Address string
 }

@@ -26,21 +26,21 @@ func SaveJSONConfig(object fmt.Stringer) {
     }
 }
 
-func LoadJSONConfig(object fmt.Stringer) interface{} {
+func LoadJSONConfig(object fmt.Stringer) (interface{}, error) {
     file, err := os.OpenFile(object.String(), os.O_RDONLY,0666)
     if err != nil {
-        log.Fatal(err.Error())
+        return nil, err
     }
     defer file.Close()
-    
+
     b, err := ioutil.ReadAll(file)
     if err != nil {
-        log.Fatal(err.Error())
+        return nil, err
     }
-    
+
     if err := json.Unmarshal(b, object); err != nil {
-        log.Fatal(err.Error())
+        return nil, err
     }
-    
-    return object
+
+    return object, nil
 }

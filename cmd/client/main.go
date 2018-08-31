@@ -8,12 +8,22 @@ import (
 )
 
 func main() {
-    config, ok := dcutil.LoadJSONConfig(dcconf.NewClientConfig(dcconf.NewMetaConfig())).(*dcconf.ClientConfig)
+    c, err := dcutil.LoadJSONConfig(dcconf.NewClientConfig(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    config, ok := c.(*dcconf.ClientConfig)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
-    
-    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+
+    c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    cmdConfig, ok := c.(*dcconf.HTTPCommands)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
@@ -24,7 +34,7 @@ func main() {
     log.Printf("Response Root is\n[%s]\n", data)
     data = httpClient.RequestLook(1, 3)
     log.Printf("Response Look is\n[%s]\n", data)
-    data = httpClient.RequestReg("tratata")
+    data, _ = httpClient.RequestReg(6666)
     log.Printf("Response Reg is\n[%s]\n", data)
     data = httpClient.RequestCheck("nodeKey1")
     log.Printf("Response Check is\n[%s]\n", data)

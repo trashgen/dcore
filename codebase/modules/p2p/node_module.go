@@ -1,7 +1,6 @@
 package p2p
 
 import (
-    "fmt"
     "log"
     "net"
     "strings"
@@ -10,7 +9,7 @@ import (
     dcconf "dcore/codebase/modules/config"
 )
 
-type NodeDesc struct {
+type nodeDesc struct {
     Key         string
     Address     string
     SendConn    net.Conn
@@ -18,48 +17,68 @@ type NodeDesc struct {
 }
 
 type NodeModule struct {
-    *RegHostModule
-    *RegClientModule
-    Key           string
-    nodes         map[string]*NodeDesc
+    *regHostModule
+    *regClientModule
+    nodes         map[string]*nodeDesc
     config        *dcconf.NodeConfig
     clientConfig  *dcconf.ClientConfig
 }
 
-func NewNodeDesc(data string) *NodeDesc {
-    params := strings.Split(data, ":")
-    if len(params) != 3 {
+func newNodeDesc(data string) *nodeDesc {
+    params := strings.Split(data, "-")
+    if len(params) != 2 {
         log.Fatalf("Bad Packet1013 Request format [%s]\n", data)
     }
 
-    return &NodeDesc{
-        Key     : params[0],
-        Address : fmt.Sprintf("%s:%s", params[1], params[2])}
+    return &nodeDesc{Key : params[0], Address : params[1]}
 }
 
-func NewNodeModule(config *dcconf.NodeConfig) *NodeModule {
-    clientConfig, ok := dcutil.LoadJSONConfig(dcconf.NewClientConfig(dcconf.NewMetaConfig())).(*dcconf.ClientConfig)
+func NewNodeModule() *NodeModule {
+    c, err := dcutil.LoadJSONConfig(dcconf.NewNodeConfig(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    
+    config, ok := c.(*dcconf.NodeConfig)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
 
-    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+    c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    cmdConfig, ok := c.(*dcconf.HTTPCommands)
+    if ! ok {
+        log.Fatal("Config: type mismatch")
+    }
+    
+    c, err = dcutil.LoadJSONConfig(dcconf.NewClientConfig(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+    
+    clientConfig, ok := c.(*dcconf.ClientConfig)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
 
     out := &NodeModule{
-        RegHostModule   : NewRegHostModule(config, cmdConfig, clientConfig),
-        RegClientModule : NewRegClientModule(config),
-        nodes           : make(map[string]*NodeDesc),
+        regHostModule   : newRegHostModule(config, cmdConfig, clientConfig),
+        regClientModule : newRegClientModule(config),
+        nodes           : make(map[string]*nodeDesc),
         config          : config,
         clientConfig    : clientConfig}
 
-    out.parseLookRequest(dchttp.NewClientModule(clientConfig, cmdConfig).RequestLook(1, config.MaxP2PConnections))
+    out.parseLookResponse(dchttp.NewClientModule(clientConfig, cmdConfig).RequestLook(1, config.MaxP2PConnections))
     return out
 }
 
 func (this *NodeModule) Start() {
-    this.Key = this.startRegHost()
-    this.accepting()
+    var err error
+    this.Key, err = this.startRegHost()
+    if err != nil {
+        log.Fatal(err.Error())
+    }
 }

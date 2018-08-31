@@ -63,7 +63,7 @@ type HTTPCommands struct {
 
 func NewHTTPCommands(meta *MetaConfig) *HTTPCommands {
     return &HTTPCommands{
-        Reg          : CommandDesc{Name:"reg", Param:"address"},
+        Reg          : CommandDesc{Name:"reg", Param:"port"},
         Look         : CommandDesc{Name:"look", Param:"count"},
         Root         : CommandDesc{Name:""},
         Check        : CommandDesc{Name:"check", Param:"key"},

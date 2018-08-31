@@ -8,12 +8,22 @@ import (
 )
 
 func main() {
-    config, ok := dcutil.LoadJSONConfig(dcconf.NewPointConfig(dcconf.NewMetaConfig())).(*dcconf.PointConfig)
+    c, err := dcutil.LoadJSONConfig(dcconf.NewPointConfig(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    config, ok := c.(*dcconf.PointConfig)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
 
-    cmdConfig, ok := dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig())).(*dcconf.HTTPCommands)
+    c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    cmdConfig, ok := c.(*dcconf.HTTPCommands)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }

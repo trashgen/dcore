@@ -7,6 +7,7 @@ import (
     "net/http"
     "io/ioutil"
     dcconf "dcore/codebase/modules/config"
+    "errors"
 )
 
 type ClientModule struct {
@@ -25,17 +26,14 @@ func NewClientModule(config *dcconf.ClientConfig, cmdConfig *dcconf.HTTPCommands
     return &ClientModule{client:stdHTTPClient, config:config, cmdConfig:cmdConfig}
 }
 
-func (this *ClientModule) RequestReg(address string) string {
-    url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Reg, address)
+func (this *ClientModule) RequestReg(port int) (string, error) {
+    url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Reg, port)
     response, err := this.getRawContent(url)
     if err != nil {
-        err := fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error())
-        log.Print(err)
-        
-        return err
+        return "", errors.New(fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error()))
     }
 
-    return fmt.Sprintf("%s\n", response)
+    return fmt.Sprintf("%s\n", response), nil
 }
 
 // TODO : Look must have 2 var query params
@@ -114,9 +112,9 @@ func (this *ClientModule) RequestCheck(key string) string {
         
         return err
     }
-    
+
     log.Printf("Ask Check with [%s]\n", url)
-    
+    log.Printf("Check response is [%s]\n", response)
     return fmt.Sprintf("%s\n", response)
 }
 
@@ -160,6 +158,7 @@ func buildURLWithParams(pointAddress string, commandDesc *dcconf.CommandDesc, pa
     if ok {
         return fmt.Sprintf("%s/%s?%s=%s", pointAddress, commandDesc.Name, commandDesc.Param, maybeString)
     }
+
     maybeInt, ok := param.(int)
     if ok {
         return fmt.Sprintf("%s/%s?%s=%d", pointAddress, commandDesc.Name, commandDesc.Param, maybeInt)
