@@ -3,8 +3,8 @@ package main
 import (
     "log"
     dcutil "dcore/codebase/util"
-    dchttp "dcore/codebase/modules/http"
     dcconf "dcore/codebase/modules/config"
+    dchttpsrv "dcore/codebase/modules/http/server"
 )
 
 func main() {
@@ -28,5 +28,5 @@ func main() {
         log.Fatal("Config: type mismatch")
     }
 
-    dchttp.NewPoint(config, cmdConfig).Start()
+    dchttpsrv.NewPoint(config, cmdConfig).Start()
 }

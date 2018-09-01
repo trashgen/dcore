@@ -53,11 +53,18 @@ func (this *regClientModule) connectReghost(address string) {
         log.Fatalf("Error receive Packet 1013 from reg host [%s]\n", err.Error())
     }
 
-    data = strings.TrimSuffix(data, "\n")
-    if data == "false" {
-        log.Fatal("I am bad boy and my IP in blacklist now :(\n")
+    if strings.Contains(data, "true") {
+        data = strings.TrimSuffix(data, "\n")
+        values := strings.Split(data, "\t")
+        if len(values) != 2 {
+            log.Fatalf("Bad Packet 1013 Response format: [%s]\n", data)
+        }
+
+        result := values[0]
+        p2pHostAddress := values[1]
+        log.Printf("I am Response from reg host [%s] - [%s]\n", result, p2pHostAddress)
     } else {
-        log.Printf("I am Response from reg host [%s]\n", data)
+        log.Fatal("I am bad boy and my IP in blacklist now :(\n")
     }
 }
 

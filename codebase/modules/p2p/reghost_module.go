@@ -5,10 +5,13 @@ import (
     "log"
     "net"
     "bufio"
-    dchttp "dcore/codebase/modules/http"
+    "errors"
+    "strings"
+    dcutil "dcore/codebase/util"
     dcmisc "dcore/codebase/modules/misc"
     dcconf "dcore/codebase/modules/config"
-    "errors"
+    dctcpsrvutil "dcore/codebase/util/tcp/server"
+    dchttpcli "dcore/codebase/modules/http/client"
 )
 
 type regHostModule struct {
@@ -19,7 +22,11 @@ type regHostModule struct {
     cmdConfig    *dcconf.HTTPCommands
     removeConn   chan net.Conn
     clientConfig *dcconf.ClientConfig
-    clientModule *dchttp.ClientModule
+    clientModule *dchttpcli.ClientModule
+
+    toBlackList       chan string
+    startP2PHost      chan struct{}
+    fromP2PHostModule chan string
 }
 
 func newRegHostModule(config *dcconf.NodeConfig, cmdConfig *dcconf.HTTPCommands, clientConfig  *dcconf.ClientConfig) *regHostModule {
@@ -29,7 +36,11 @@ func newRegHostModule(config *dcconf.NodeConfig, cmdConfig *dcconf.HTTPCommands,
         cmdConfig    : cmdConfig,
         removeConn   : make(chan net.Conn),
         clientConfig : clientConfig,
-        clientModule : dchttp.NewClientModule(clientConfig, cmdConfig)}
+        clientModule : dchttpcli.NewClientModule(clientConfig, cmdConfig),
+
+        toBlackList       : make(chan string, 128),
+        startP2PHost      : make(chan struct{}),
+        fromP2PHostModule : make(chan string)}
 }
 
 func (this *regHostModule) startRegHost() (string, error) {
@@ -87,7 +98,7 @@ func (this *regHostModule) processPacket1013(conn net.Conn) {
         return
     }
 
-    response, key, err := this.handlePacket1013(data)
+    response, key, err := this.handlePacket1013(data, conn.RemoteAddr())
     if err != nil {
         log.Printf("Can't reg node with invalid key [%s]\n", key)
         this.removeConn <- conn
@@ -102,12 +113,22 @@ func (this *regHostModule) processPacket1013(conn net.Conn) {
     }
 }
 
-func (this *regHostModule) handlePacket1013(data string) ([]byte, string, error) {
+func (this *regHostModule) handlePacket1013(data string, address net.Addr) ([]byte, string, error) {
     request, err := dcmisc.SplitPacket1013(data)
     if err != nil {
         return nil, "", err
     }
 
     response := this.clientModule.RequestCheck(request.Key)
+    if strings.TrimSuffix(response, "\n") == "true" {
+        this.startP2PHost <- struct{}{}
+        hostAddress := <- this.fromP2PHostModule
+        log.Printf("New P2P Host address is [%s]\n", hostAddress)
+        response = dctcpsrvutil.BuildGoodPacket1013Response(hostAddress)
+    } else {
+        log.Printf("Address [%s] to black list\n", address)
+        this.toBlackList <- dcutil.RemovePortFromAddressString(address.String())
+    }
+
     return []byte(response), request.Key, nil
 }

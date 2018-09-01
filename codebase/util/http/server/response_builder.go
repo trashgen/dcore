@@ -4,25 +4,19 @@ import (
     "fmt"
     "time"
     "strings"
-    "unicode"
     "crypto/md5"
     "encoding/hex"
     "dcore/codebase/modules/config"
+    dcutil "dcore/codebase/util"
     dchttputil "dcore/codebase/util/http"
 )
 
 func BuildRegResponse(remoteAddr string, secret string) (response []byte, key string, ip string) {
     response = make([]byte, 0)
-
     hash := md5.New()
     hash.Write([]byte(fmt.Sprintf("%s!@#$^&*()%s!@#$^&*()%s", remoteAddr, time.Now().String(), secret)))
     key = hex.EncodeToString(hash.Sum(nil))
-    ip = strings.TrimSuffix(strings.TrimRightFunc(remoteAddr,
-        func(r rune) bool {
-            return unicode.IsDigit(r)
-        }), ":")
-
-    return []byte(key), key, ip
+    return []byte(key), key, dcutil.RemovePortFromAddressString(remoteAddr)
 }
 
 func BuildLookOrPointsResponse(nodes map[string]*dchttputil.ConnectionID, count int) []byte {

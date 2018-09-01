@@ -3,8 +3,8 @@ package main
 import (
     "log"
     dcutil "dcore/codebase/util"
-    dchttp "dcore/codebase/modules/http"
     dcconf "dcore/codebase/modules/config"
+    dchttpcli "dcore/codebase/modules/http/client"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
         log.Fatal("Config: type mismatch")
     }
 
-    httpClient := dchttp.NewClientModule(config, cmdConfig)
+    httpClient := dchttpcli.NewClientModule(config, cmdConfig)
     data := httpClient.RequestRoot()
     log.Print("================ TESTING HTTP ================\n")
     log.Printf("Response Root is\n[%s]\n", data)

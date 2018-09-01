@@ -1,4 +1,4 @@
-package http
+package client
 
 import (
     "fmt"
@@ -113,8 +113,6 @@ func (this *ClientModule) RequestCheck(key string) string {
         return err
     }
 
-    log.Printf("Ask Check with [%s]\n", url)
-    log.Printf("Check response is [%s]\n", response)
     return fmt.Sprintf("%s\n", response)
 }
 

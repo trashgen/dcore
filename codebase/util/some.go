@@ -4,6 +4,7 @@ import (
     "bufio"
     "strings"
     dcmisc "dcore/codebase/modules/misc"
+    "unicode"
 )
 
 func ScanString(data string, delimeter byte) []string {
@@ -15,4 +16,11 @@ func ScanString(data string, delimeter byte) []string {
     }
 
     return out
+}
+
+func RemovePortFromAddressString(address string) string {
+    return strings.TrimSuffix(strings.TrimRightFunc(address,
+        func(r rune) bool {
+            return unicode.IsDigit(r)
+        }), ":")
 }

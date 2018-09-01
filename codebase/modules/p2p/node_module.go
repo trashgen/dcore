@@ -5,8 +5,9 @@ import (
     "net"
     "strings"
     dcutil "dcore/codebase/util"
-    dchttp "dcore/codebase/modules/http"
     dcconf "dcore/codebase/modules/config"
+    dchttpcli "dcore/codebase/modules/http/client"
+    dcpersist "dcore/codebase/modules/persistance"
 )
 
 type nodeDesc struct {
@@ -71,7 +72,7 @@ func NewNodeModule() *NodeModule {
         config          : config,
         clientConfig    : clientConfig}
 
-    out.parseLookResponse(dchttp.NewClientModule(clientConfig, cmdConfig).RequestLook(1, config.MaxP2PConnections))
+    out.parseLookResponse(dchttpcli.NewClientModule(clientConfig, cmdConfig).RequestLook(1, config.MaxP2PConnections))
     return out
 }
 
@@ -81,4 +82,24 @@ func (this *NodeModule) Start() {
     if err != nil {
         log.Fatal(err.Error())
     }
+
+    go func() {
+        postgres := dcpersist.NewBlackListModule()
+        for badAddress := range this.toBlackList {
+            postgres.Save(badAddress)
+        }
+        postgres.Close()
+    }()
+
+    go func() {
+        for {
+            <- this.startP2PHost
+            log.Printf("Have to start new P2P Host\n")
+            // TODO : Тут работает p2phost_module - создает хост и отдает полный адрес для подключения
+            // TODO : Потом начинает работать p2pclient_module - пытается подключится на ip. После коннекта - шлю ответ что готов к обратке.
+            // TODO : Учесть момент что коннекта может не быть (NAT) - ограничить по таймауту.
+            p2pHostAddress := "P2P Host address"
+            this.fromP2PHostModule <- p2pHostAddress
+        }
+    }()
 }
