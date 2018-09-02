@@ -7,7 +7,6 @@ import (
     "bufio"
     "errors"
     dcutil "dcore/codebase/util"
-    dcmisc "dcore/codebase/modules/misc"
     dctcpsrvutil "dcore/codebase/util/tcp/server"
 )
 
@@ -84,7 +83,7 @@ func (this *regHostModule) createP2PLine(conn net.Conn) {
                 return
             }
 
-            packetID, params, err := dcmisc.SplitPacketIDWithData(data)
+            packetID, params, err := dcutil.SplitPacketIDWithData(data)
             if err != nil {
                 this.removeConn <- conn
                 return
@@ -106,7 +105,7 @@ func (this *regHostModule) createP2PLine(conn net.Conn) {
 }
 
 func (this *regHostModule) answerTo1013Request(conn net.Conn, params []string, address net.Addr) {
-    request, err := dcmisc.SplitPacket1013RequestParams(params)
+    request, err := dcutil.SplitPacket1013RequestParams(params)
     if err != nil {
         log.Print(err.Error())
         return
@@ -136,14 +135,14 @@ func (this *regHostModule) answerTo1013Request(conn net.Conn, params []string, a
 }
 
 func (this *regHostModule) handle777Request(params []string) {
-    if request, err := dcmisc.SplitPacket777RequestParams(params); ! request.Status || err != nil {
+    if request, err := dcutil.SplitPacket777RequestParams(params); ! request.Status || err != nil {
         log.Fatal("To The Death!")
     }
 }
 
 func (this *regHostModule) handle88Request(params []string) bool {
     // TODO : Connect to P2P
-    request, err := dcmisc.SplitPacket88RequestParams(params)
+    request, err := dcutil.SplitPacket88RequestParams(params)
     if err != nil {
         log.Print("To The Death!")
         return false

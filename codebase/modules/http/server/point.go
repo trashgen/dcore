@@ -3,6 +3,7 @@ package server
 import (
     "log"
     "net/http"
+    dcutil "dcore/codebase/util"
     dcconf "dcore/codebase/modules/config"
     dcpers "dcore/codebase/modules/persistance"
     dchttpserverutil "dcore/codebase/util/http/server"
@@ -54,7 +55,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
         return
     }
 
-    request, err := dcmisc.SplitRequestReg(this.cmdConfig.Reg.Param, queryParams)
+    request, err := dcutil.SplitRequestReg(this.cmdConfig.Reg.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.WriteHeader(http.StatusBadRequest)
@@ -69,7 +70,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
 
 func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
     w.Header().Set("Connection", "close")
-    request, err := dcmisc.SplitRequestLook(this.cmdConfig.Look.Param, queryParams)
+    request, err := dcutil.SplitRequestLook(this.cmdConfig.Look.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.WriteHeader(http.StatusBadRequest)
@@ -98,7 +99,7 @@ func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    request, err := dcmisc.SplitRequestCheck(this.cmdConfig.Check.Param, queryParams)
+    request, err := dcutil.SplitRequestCheck(this.cmdConfig.Check.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.WriteHeader(http.StatusBadRequest)
@@ -113,7 +114,7 @@ func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
 
 func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
     w.Header().Set("Connection", "close")
-    request, err := dcmisc.SplitRequestPoints(this.cmdConfig.Points.Param, queryParams)
+    request, err := dcutil.SplitRequestPoints(this.cmdConfig.Points.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.WriteHeader(http.StatusBadRequest)
@@ -134,7 +135,7 @@ func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    request, err := dcmisc.SplitRequestRemove(this.cmdConfig.Remove.Param, queryParams)
+    request, err := dcutil.SplitRequestRemove(this.cmdConfig.Remove.Param, queryParams)
     if err != nil {
         log.Print(err.Error())
         w.WriteHeader(http.StatusBadRequest)

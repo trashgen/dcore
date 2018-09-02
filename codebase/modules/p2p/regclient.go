@@ -5,7 +5,6 @@ import (
     "net"
     "bufio"
     dcutil "dcore/codebase/util"
-    dcmisc "dcore/codebase/modules/misc"
     dctcpsrvutil "dcore/codebase/util/tcp/server"
 )
 
@@ -21,7 +20,7 @@ func newRegClientModule(dataBlock *mediator) *regClientModule {
 func (this *regClientModule) Connect() {
     for _, nd := range this.otherRegHosts {
         go func(nd *nodeDesc) {
-            this.createP2PLine(nd.Address)
+            this.createP2PLine("")
         }(nd)
     }
 }
@@ -53,12 +52,12 @@ func (this *regClientModule) createP2PLine(address string) {
 }
 
 func (this *regClientModule) handle1013Response(data string, thisHostAddress string, conn net.Conn) {
-    response, err := dcmisc.SplitPacket1013Response(data)
+    response, err := dcutil.SplitPacket1013Response(data)
     if err != nil {
         log.Printf("Response 1013 bad format [%s]\n", data)
         return
     }
-    
+
     if response.Status {
         otherNodeStatus := this.clientModule.RequestCheck(response.Key)
         if otherNodeStatus {

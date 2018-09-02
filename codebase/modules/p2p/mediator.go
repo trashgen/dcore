@@ -69,13 +69,13 @@ func NewMediator() *mediator {
         fromP2PClientModule : make(chan struct{})}
 }
 
-func (this *mediator) StartHost(key string) string {
+func (this *mediator) StartHost() string {
     this.startP2PHost <- struct{}{}
     // TODO : add to nodes
     return <- this.fromP2PHostModule
 }
 
-func (this *mediator) StartClient(key string, onHost string) {
+func (this *mediator) StartClient(onHost string) {
     this.startP2PClient <- onHost
     // TODO : update nodes record
     <- this.fromP2PClientModule

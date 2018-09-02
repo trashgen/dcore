@@ -50,7 +50,7 @@ func (this *Host) Start(config *config.NodeConfig) (string, bool) {
 func (this *Host) handleConn(conn net.Conn) {
     go func() {
         for {
-            response, err := bufio.NewReader(conn).ReadString('\n')
+            _, err := bufio.NewReader(conn).ReadString('\n')
             if err != nil {
                 log.Printf("P2P Client receive error %s\n", err.Error())
                 return
