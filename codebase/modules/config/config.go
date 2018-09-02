@@ -28,6 +28,8 @@ func (this *MetaConfig) String() string {
 type NodeConfig struct {
     MinRegPort        int
     MaxRegPort        int
+    MinP2PPort        int
+    MaxP2PPort        int
     MaxP2PConnections int
     fileName          string
 }
@@ -36,6 +38,8 @@ func NewNodeConfig(meta *MetaConfig) *NodeConfig {
     return &NodeConfig{
         MinRegPort        : 33333,
         MaxRegPort        : 33366,
+        MinP2PPort        : 51111,
+        MaxP2PPort        : 51222,
         MaxP2PConnections : 16,
         fileName          : meta.NodeConfigFileName}
 }

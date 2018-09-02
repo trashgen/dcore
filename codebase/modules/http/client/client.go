@@ -33,7 +33,7 @@ func (this *ClientModule) RequestReg(port int) (string, error) {
         return "", errors.New(fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error()))
     }
 
-    return fmt.Sprintf("%s\n", response), nil
+    return fmt.Sprintf("%s", response), nil
 }
 
 // TODO : Look must have 2 var query params
@@ -103,17 +103,20 @@ func (this *ClientModule) RequestRoot() string {
     return fmt.Sprintf("%s\n", response)
 }
 
-func (this *ClientModule) RequestCheck(key string) string {
+func (this *ClientModule) RequestCheck(key string) bool {
     url := buildURLWithParams(this.config.EntryPoints[0], &this.cmdConfig.Check, key)
     response, err := this.getRawContent(url)
     if err != nil {
-        err := fmt.Sprintf("Error by getting response 'Check' from Point [%s]: [%s]\n", url, err.Error())
-        log.Print(err)
-        
-        return err
+        log.Print(fmt.Sprintf("Error by getting response 'Check' from Point [%s]: [%s]\n", url, err.Error()))
+        return false
     }
 
-    return fmt.Sprintf("%s\n", response)
+    // TODO : Вынести преобразование в функцию
+    status := true
+    if response == "false" {
+        status = false
+    }
+    return status
 }
 
 func (this *ClientModule) RequestRemove(key string) string {

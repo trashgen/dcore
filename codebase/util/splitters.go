@@ -1,4 +1,4 @@
-package misc
+package util
 
 import (
     "fmt"
@@ -8,6 +8,7 @@ import (
     "errors"
     "strconv"
     "strings"
+    "unicode"
     dchttputil "dcore/codebase/util/http"
 )
 
@@ -28,9 +29,31 @@ func SplitterFunc(splitSymbol byte) (func(data []byte, atEOF bool) (advance int,
 
 ///////////////////////////// START TCP SPLITTERS /////////////////////////////
 
-func SplitPacket1013(data string) (*dchttputil.Request1013, error) {
+func SplitPacketIDWithData(data string) (int, []string, error) {
     params := SplitTCPParams(strings.TrimSuffix(data, "\n"))
-    if len(params) != 2 {
+    if len(params) < 1 {
+        return 0, nil, errors.New(fmt.Sprintf("no packet id in request [%s]", data))
+    }
+    
+    packetID, err := strconv.Atoi(params[0])
+    if err != nil {
+        return 0, nil, err
+    }
+
+    return packetID, params[1:], nil
+}
+
+func SplitPacket1013RequestParams(params []string) (*dchttputil.Request1013, error) {
+    if len(params) != 1 {
+        return nil, errors.New(fmt.Sprintf("bad 1013 request [%#v]", params))
+    }
+    return &dchttputil.Request1013{ID:1013, Key:params[0]}, nil
+}
+
+// TODO : Переделать по аналогии с SplitPacket1013RequestParams
+func SplitPacket1013Response(data string) (*dchttputil.Response1013, error) {
+    params := SplitTCPParams(strings.TrimSuffix(data, "\n"))
+    if len(params) != 4 {
         return nil, errors.New(fmt.Sprintf("bad 1013 request [%s]", data))
     }
 
@@ -39,7 +62,33 @@ func SplitPacket1013(data string) (*dchttputil.Request1013, error) {
         return nil, err
     }
 
-    return &dchttputil.Request1013{ID:id, Key:params[1]}, nil
+    status, err := strconv.ParseBool(params[1])
+    if err != nil {
+        return nil, err
+    }
+
+    key, address := params[2], params[3]
+
+    log.Printf("SplitPacket1013Response [%d] [%s] [%s]\n", id, key, address)
+    return &dchttputil.Response1013{ID:id, Status:status, Key:key, Address:address}, nil
+}
+
+func SplitPacket777RequestParams(params []string) (*dchttputil.Request777, error) {
+    if len(params) != 1 {
+        return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
+    }
+    status, err := strconv.ParseBool(params[0])
+    if err != nil {
+        return nil, err
+    }
+    return &dchttputil.Request777{ID:777, Status:status}, nil
+}
+
+func SplitPacket88RequestParams(params []string) (*dchttputil.Request88, error) {
+    if len(params) != 1 {
+        return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
+    }
+    return &dchttputil.Request88{ID:777, Addr:params[0]}, nil
 }
 
 ////////////////////////////// END TCP SPLITTERS ///////////////////////////////
@@ -81,13 +130,12 @@ func SplitRequestLook(paramName string, queryParams string) (*dchttputil.Request
 }
 
 func SplitRequestCheck(paramName string, queryParams string) (*dchttputil.RequestCheck, error) {
-    log.Printf("SplitRequestCheck [%s] - [%s]\n", paramName, queryParams)
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
         return nil, errors.New("bad 'Check' 'key' param key")
     }
-    
+
     return &dchttputil.RequestCheck{Key:value}, nil
 }
 
@@ -99,9 +147,9 @@ func SplitRequestPoints(paramName string, queryParams string) (*dchttputil.Reque
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
-        return nil, errors.New("bad 'Points' Count param key")
+        return nil, errors.New("bad 'Points' 'count' param key")
     }
-    
+
     count, err := strconv.Atoi(value)
     if err != nil {
         return nil, errors.New(fmt.Sprintf("bad 'Points' 'count' param value [%s]", value))
@@ -148,4 +196,23 @@ func SplitTCPParams(params string) []string {
     }
 
     return out
+}
+
+
+func ScanString(data string, delimeter byte) []string {
+    out := make([]string, 0)
+    scanner := bufio.NewScanner(strings.NewReader(data))
+    scanner.Split(SplitterFunc(delimeter))
+    for scanner.Scan() {
+        out = append(out, scanner.Text())
+    }
+    
+    return out
+}
+
+func RemovePortFromAddressString(address string) string {
+    return strings.TrimSuffix(strings.TrimRightFunc(address,
+        func(r rune) bool {
+            return unicode.IsDigit(r)
+        }), ":")
 }

@@ -3,26 +3,20 @@ package server
 import (
     "log"
     "net/http"
-    dcmisc "dcore/codebase/modules/misc"
     dcconf "dcore/codebase/modules/config"
-    dchttputil "dcore/codebase/util/http"
+    dcpers "dcore/codebase/modules/persistance"
     dchttpserverutil "dcore/codebase/util/http/server"
 )
 
 type Point struct {
     id        string
-    nodes     map[string]*dchttputil.ConnectionID
+    redis     *dcpers.RedisModule
     config    *dcconf.PointConfig
-    points    map[string]*dchttputil.ConnectionID // not used now
     cmdConfig *dcconf.HTTPCommands
 }
 
 func NewPoint(config *dcconf.PointConfig, cmdConfig *dcconf.HTTPCommands) *Point {
-    return &Point{
-        nodes     : make(map[string]*dchttputil.ConnectionID, 16),
-        points    : make(map[string]*dchttputil.ConnectionID, 16),
-        config    : config,
-        cmdConfig : cmdConfig}
+    return &Point{redis:dcpers.NewRedisModule(), config:config, cmdConfig:cmdConfig}
 }
 
 func (this *Point) Start() {
@@ -69,7 +63,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
     }
 
     response, key, ip := dchttpserverutil.BuildRegResponse(remoteAddr, this.config.SecretPhrase)
-    this.nodes[key] = dchttputil.NewConnectionID(key, ip, request.Port)
+    this.redis.AddNode(key, ip, request.Port)
     w.Write(response)
 }
 
@@ -83,7 +77,7 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.nodes, request.Count))
+    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
 }
 
 func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
@@ -113,7 +107,7 @@ func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
         return
     }
     
-    response, _ := dchttpserverutil.BuildCheckOrRemoveResponse(this.nodes, request.Key)
+    response, _ := dchttpserverutil.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
     w.Write(response)
 }
 
@@ -127,7 +121,7 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.points, request.Count))
+    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
 }
 
 func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
@@ -149,9 +143,9 @@ func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    response, has := dchttpserverutil.BuildCheckOrRemoveResponse(this.nodes, request.Key)
+    response, has := dchttpserverutil.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
     if has {
-        delete(this.nodes, request.Key)
+        this.redis.RemoveNode(request.Key)
     }
 
     w.Write(response)
