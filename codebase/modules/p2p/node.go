@@ -9,7 +9,7 @@ import (
 
 type nodeDesc struct {
     key  string
-    proc *processor
+    addr string
 }
 
 type NodeModule struct {
@@ -24,7 +24,7 @@ func newNodeDesc(data string) *nodeDesc {
         log.Fatalf("Bad Packet1013 Request format [%s]\n", data)
     }
 
-    return &nodeDesc{key:params[0], proc:NewProcessor()}
+    return &nodeDesc{key: params[0], addr: params[1]}
 }
 
 func NewNodeModule() *NodeModule {

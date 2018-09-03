@@ -20,7 +20,7 @@ func newRegClientModule(dataBlock *mediator) *regClientModule {
 func (this *regClientModule) Connect() {
     for _, nd := range this.otherRegHosts {
         go func(nd *nodeDesc) {
-            this.createP2PLine("")
+            this.createP2PLine(nd.addr)
         }(nd)
     }
 }
