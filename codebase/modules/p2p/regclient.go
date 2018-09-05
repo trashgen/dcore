@@ -17,18 +17,23 @@ func newRegClientModule(m *mediator) *regClientModule {
     return &regClientModule{mediator: m, handler: newRegResponseHandler(m)}
 }
 
-func (this *regClientModule) Connect() {
-    for _, cli := range this.clients {
-        go func(c *client) {
-            this.createP2PLine(c)
-        }(cli)
+func (this *regClientModule) Connect(regListenPort int) {
+    regHosts := this.clientModule.RequestLook(1, this.nodeConfig.MaxP2PConnections)
+    var err error
+    this.ThisNodeKey, err = this.clientModule.RequestReg(regListenPort)
+    if err != nil {
+        log.Fatalf("Can't register at Point [%s]\n", err.Error())
+    }
+    for _, regHost := range regHosts {
+        regHost := regHost
+        this.createP2PLine(regHost)
     }
 }
 
-func (this *regClientModule) createP2PLine(cli *client) {
-    conn, err := net.Dial("tcp", cli.regHostAddr)
+func (this *regClientModule) createP2PLine(regHost string) {
+    conn, err := net.Dial("tcp", regHost)
     if err != nil {
-        log.Fatalf("Can't connect to reg host [%s]\n", cli.regHostAddr)
+        log.Fatalf("Can't connect to reg host [%s]\n", regHost)
     }
 
     request1013 := dcutcp.BuildPacket1013Request(this.ThisNodeKey)

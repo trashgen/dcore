@@ -27,7 +27,7 @@ func BuildLookOrPointsResponse(nodes map[string]*dchttputil.ConnectionID, count 
     i := 0
     sb := strings.Builder{}
     for _, v := range nodes {
-        sb.WriteString(fmt.Sprintf("%s-%s:%d\t", v.Key, v.IP, v.Port))
+        sb.WriteString(fmt.Sprintf("%s:%d\t", v.IP, v.Port))
         if i++; i == count {
             break
         }

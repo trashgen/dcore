@@ -12,8 +12,8 @@ type MyResponseHandler struct {}
 
 func main() {
     node := p2p.NewNodeModule(&MyRequestHandler{}, &MyResponseHandler{})
-    node.Start()
-    node.Connect()
+    regListenPort := node.Start()
+    node.Connect(regListenPort)
     node.Accepting()
 }
 

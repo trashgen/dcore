@@ -9,12 +9,12 @@ import "net"
  * Принцип работы такой же как стандартный net.http.ListenAndServe() (исключая возможность 'nil').
  */
 
-// Используется сервером в ответ на поступающие с клиента запросы.
+// TCP. Используется сервером в ответ на поступающие с клиента запросы.
 type RequestHandler interface {
     Run(data string, conn net.Conn) ([]byte, error)
 }
 
-// Когда сервер ответил на запрос - надо обработать, что он там придумал.
+// TCP. Когда сервер ответил на запрос - надо обработать, что он там придумал.
 type ResponseHandler interface {
     Run(data string, conn net.Conn) error
 }

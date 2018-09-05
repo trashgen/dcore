@@ -55,7 +55,7 @@ func SplitPacket1013RequestParams(params []string) (*dcutcp.Request1013, error) 
 func SplitPacket1013Response(data string) (*dcutcp.Response1013, error) {
     params := SplitTCPParams(strings.TrimSuffix(data, "\n"))
     if len(params) != 4 {
-        return nil, errors.New(fmt.Sprintf("bad 1013 request [%s]", data))
+        return nil, errors.New(fmt.Sprintf("bad 1013 response [%s]", data))
     }
 
     id, err := strconv.Atoi(params[0])

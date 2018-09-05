@@ -22,7 +22,7 @@ type mediator struct {
     responseHandler meta.ResponseHandler
 }
 
-func NewMediator(requestHandler meta.RequestHandler, responseHandler meta.ResponseHandler) *mediator {
+func newMediator(requestHandler meta.RequestHandler, responseHandler meta.ResponseHandler) *mediator {
     nodeConfig, cmdConfig, clientConfig := loadConfigs()
     return &mediator{
         hosts           : make([]*host, 0),

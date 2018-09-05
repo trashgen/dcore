@@ -5,17 +5,15 @@ import (
     "log"
     "net"
     "bufio"
-    "errors"
     "dcore/codebase/modules/p2p/meta"
 )
 
 type regHostModule struct {
     *mediator
-    port       int
-    handler    meta.RequestHandler
-    regHost    net.Listener
-    newConn    chan net.Conn
-    removeConn chan net.Conn
+    handler     meta.RequestHandler
+    newConn     chan net.Conn
+    removeConn  chan net.Conn
+    regListener net.Listener
 }
 
 func newRegHostModule(m *mediator) *regHostModule {
@@ -26,31 +24,27 @@ func newRegHostModule(m *mediator) *regHostModule {
         removeConn : make(chan net.Conn)}
 }
 
-func (this *regHostModule) startRegHost() (string, error) {
+func (this *regHostModule) startRegHost() (port int) {
     var err error
-    for this.port = this.nodeConfig.MinRegPort; this.port < this.nodeConfig.MaxRegPort; this.port++ {
-        if this.regHost, err = net.Listen("tcp", fmt.Sprintf(":%d", this.port)); err == nil {
+    for port = this.nodeConfig.MinRegPort; port < this.nodeConfig.MaxRegPort; port++ {
+        if this.regListener, err = net.Listen("tcp", fmt.Sprintf(":%d", port)); err == nil {
             break
         }
     }
-
     if err != nil {
-        return "", errors.New(fmt.Sprintf("All reg port are busy [%d..%d]. Do something!\n", this.nodeConfig.MinRegPort, this.nodeConfig.MaxRegPort))
+        log.Fatalf("Can't start reg host [%s]\n", err.Error())
     }
-
     this.onNewConnection()
     this.onRemoveConnection()
-
-    return this.clientModule.RequestReg(this.port)
+    return port
 }
 
 func (this *regHostModule) Accepting() {
     for {
-        conn, err := this.regHost.Accept()
+        conn, err := this.regListener.Accept()
         if err != nil {
             log.Fatalf("Can't Accept new connections: [%s]\n", err.Error())
         }
-
         this.newConn <- conn
     }
 }
@@ -81,12 +75,11 @@ func (this *regHostModule) createP2PLine(conn net.Conn) {
             if err != nil {
                 break
             }
-
             response, err := this.handler.Run(data, conn)
             if err != nil {
+                log.Print(err.Error())
                 break
             }
-
             if response != nil {
                 if _, err = conn.Write(response); err != nil {
                     break

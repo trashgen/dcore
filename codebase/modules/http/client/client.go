@@ -4,10 +4,12 @@ import (
     "fmt"
     "log"
     "time"
+    "errors"
+    "strings"
     "net/http"
     "io/ioutil"
+    dcutil "dcore/codebase/util"
     dcconf "dcore/codebase/modules/config"
-    "errors"
 )
 
 type ClientModule struct {
@@ -37,7 +39,8 @@ func (this *ClientModule) RequestReg(port int) (string, error) {
 }
 
 // TODO : Look must have 2 var query params
-func (this *ClientModule) RequestLook(maxPoints int, count int) string {
+func (this *ClientModule) RequestLook(maxPoints int, count int) []string {
+    out := make([]string, 0, count)
     urls := make([]string, 0, maxPoints)
     for i := 0; i < maxPoints; i++ {
         if count == 0 {
@@ -47,17 +50,15 @@ func (this *ClientModule) RequestLook(maxPoints int, count int) string {
         }
     }
 
-    var out string
     for _, url := range urls {
         response, err := this.getRawContent(url)
         if err != nil {
-            errDesc := fmt.Sprintf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
-            log.Print(errDesc)
-
-            return errDesc
+            log.Printf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
+            continue
         }
 
-        out += fmt.Sprintf("%s\n", response)
+        regHosts := dcutil.ScanString(strings.TrimSuffix(response, "\n"), '\t')
+        out = append(out, regHosts...)
     }
 
     return out

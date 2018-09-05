@@ -1,11 +1,8 @@
 package p2p
 
 import (
-    "log"
-    "strings"
-    dcutil "dcore/codebase/util"
-    "dcore/codebase/modules/persistance"
     "dcore/codebase/modules/p2p/meta"
+    "dcore/codebase/modules/persistance"
 )
 
 type NodeModule struct {
@@ -15,42 +12,22 @@ type NodeModule struct {
 }
 
 func NewNodeModule(requestHandler meta.RequestHandler, responseHandler meta.ResponseHandler) *NodeModule {
-    mediator := NewMediator(requestHandler, responseHandler)
-    out := &NodeModule{mediator: mediator}
-    out.regHostModule   = newRegHostModule(mediator)
-    out.regClientModule = newRegClientModule(mediator)
-
-    lookResponse := out.clientModule.RequestLook(1, out.nodeConfig.MaxP2PConnections)
-    out.handleLookResponse(lookResponse)
-
-    return out
+    mediator := newMediator(requestHandler, responseHandler)
+    return &NodeModule{
+        mediator        : mediator,
+        regHostModule   : newRegHostModule(mediator),
+        regClientModule : newRegClientModule(mediator)}
 }
 
-func (this *NodeModule) Start() {
-    var err error
-    this.ThisNodeKey, err = this.startRegHost()
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-
+func (this *NodeModule) Start() (regListenPort int) {
+    regListenPort = this.startRegHost()
     go func() {
         postgres := persistance.NewBlackListModule()
         defer postgres.Close()
         for badAddress := range this.toBlackList {
+            badAddress := badAddress
             postgres.Save(badAddress)
         }
     }()
-}
-
-func (this *NodeModule) handleLookResponse(data string) {
-    data = strings.TrimSuffix(data, "\n")
-    values := dcutil.ScanString(data, '\t')
-    for _, v := range values {
-        params := strings.Split(v, "-")
-        if len(params) != 2 {
-            log.Fatalf("Bad Packet1013 Request format [%s]\n", data)
-        }
-
-        this.clients[params[0]] = newClient(this.mediator, params[0], params[1], this.responseHandler)
-    }
+    return regListenPort
 }
