@@ -5,8 +5,8 @@ import (
     "net/http"
     dcutil "dcore/codebase/util"
     dcconf "dcore/codebase/modules/config"
+    dcuhttp "dcore/codebase/util/http/server"
     dcpers "dcore/codebase/modules/persistance"
-    dchttpserverutil "dcore/codebase/util/http/server"
 )
 
 type Point struct {
@@ -63,7 +63,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, query
         return
     }
 
-    response, key, ip := dchttpserverutil.BuildRegResponse(remoteAddr, this.config.SecretPhrase)
+    response, key, ip := dcuhttp.BuildRegResponse(remoteAddr, this.config.SecretPhrase)
     this.redis.AddNode(key, ip, request.Port)
     w.Write(response)
 }
@@ -78,16 +78,12 @@ func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
+    w.Write(dcuhttp.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
 }
 
 func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
-    if len(queryParams) > 0 {
-        log.Printf("Root: ignore query params: [%s]\n", queryParams)
-    }
-
     w.Header().Set("Connection", "close")
-    w.Write(dchttpserverutil.BuildRootResponse(this.cmdConfig))
+    w.Write(dcuhttp.BuildRootResponse(this.cmdConfig))
 }
 
 func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
@@ -108,7 +104,7 @@ func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
         return
     }
     
-    response, _ := dchttpserverutil.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
+    response, _ := dcuhttp.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
     w.Write(response)
 }
 
@@ -122,7 +118,7 @@ func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    w.Write(dchttpserverutil.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
+    w.Write(dcuhttp.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
 }
 
 func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
@@ -144,7 +140,7 @@ func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
         return
     }
 
-    response, has := dchttpserverutil.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
+    response, has := dcuhttp.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
     if has {
         this.redis.RemoveNode(request.Key)
     }

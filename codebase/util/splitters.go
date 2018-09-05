@@ -9,7 +9,8 @@ import (
     "strconv"
     "strings"
     "unicode"
-    dchttputil "dcore/codebase/util/http"
+    dcutcp "dcore/codebase/util/tcp"
+    dcuhttp "dcore/codebase/util/http"
 )
 
 func SplitterFunc(splitSymbol byte) (func(data []byte, atEOF bool) (advance int, token []byte, err error)) {
@@ -43,15 +44,15 @@ func SplitPacketIDWithData(data string) (int, []string, error) {
     return packetID, params[1:], nil
 }
 
-func SplitPacket1013RequestParams(params []string) (*dchttputil.Request1013, error) {
+func SplitPacket1013RequestParams(params []string) (*dcutcp.Request1013, error) {
     if len(params) != 1 {
         return nil, errors.New(fmt.Sprintf("bad 1013 request [%#v]", params))
     }
-    return &dchttputil.Request1013{ID:1013, Key:params[0]}, nil
+    return &dcutcp.Request1013{ID:1013, ThoseNodeKey:params[0]}, nil
 }
 
 // TODO : Переделать по аналогии с SplitPacket1013RequestParams
-func SplitPacket1013Response(data string) (*dchttputil.Response1013, error) {
+func SplitPacket1013Response(data string) (*dcutcp.Response1013, error) {
     params := SplitTCPParams(strings.TrimSuffix(data, "\n"))
     if len(params) != 4 {
         return nil, errors.New(fmt.Sprintf("bad 1013 request [%s]", data))
@@ -69,11 +70,10 @@ func SplitPacket1013Response(data string) (*dchttputil.Response1013, error) {
 
     key, address := params[2], params[3]
 
-    log.Printf("SplitPacket1013Response [%d] [%s] [%s]\n", id, key, address)
-    return &dchttputil.Response1013{ID:id, Status:status, Key:key, Address:address}, nil
+    return &dcutcp.Response1013{ID:id, Status:status, ThoseNodeKey:key, Address:address}, nil
 }
 
-func SplitPacket777RequestParams(params []string) (*dchttputil.Request777, error) {
+func SplitPacket777RequestParams(params []string) (*dcutcp.Request777, error) {
     if len(params) != 1 {
         return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
     }
@@ -81,21 +81,21 @@ func SplitPacket777RequestParams(params []string) (*dchttputil.Request777, error
     if err != nil {
         return nil, err
     }
-    return &dchttputil.Request777{ID:777, Status:status}, nil
+    return &dcutcp.Request777{ID:777, Status:status}, nil
 }
 
-func SplitPacket88RequestParams(params []string) (*dchttputil.Request88, error) {
-    if len(params) != 1 {
+func SplitPacket88RequestParams(params []string) (*dcutcp.Request88, error) {
+    if len(params) != 2 {
         return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
     }
-    return &dchttputil.Request88{ID:777, Addr:params[0]}, nil
+    return &dcutcp.Request88{ID:777, ThoseNodeKey: params[0], HostAddr:params[1]}, nil
 }
 
 ////////////////////////////// END TCP SPLITTERS ///////////////////////////////
 
 ///////////////////////////// START HTTP SPLITTERS ////////////////////////////
 
-func SplitRequestReg(paramName string, queryParams string) (*dchttputil.RequestReg, error) {
+func SplitRequestReg(paramName string, queryParams string) (*dcuhttp.RequestReg, error) {
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
@@ -107,12 +107,12 @@ func SplitRequestReg(paramName string, queryParams string) (*dchttputil.RequestR
         return nil, errors.New(fmt.Sprintf("bad 'Reg' port value (not int) [%s]", value))
     }
 
-    return &dchttputil.RequestReg{Port:port}, nil
+    return &dcuhttp.RequestReg{Port:port}, nil
 }
 
-func SplitRequestLook(paramName string, queryParams string) (*dchttputil.RequestLook, error) {
+func SplitRequestLook(paramName string, queryParams string) (*dcuhttp.RequestLook, error) {
     if len(queryParams) == 0 {
-        return &dchttputil.RequestLook{Count:0}, nil
+        return &dcuhttp.RequestLook{Count:0}, nil
     }
 
     paramsMap := SplitQueryParams(queryParams)
@@ -126,22 +126,22 @@ func SplitRequestLook(paramName string, queryParams string) (*dchttputil.Request
         return nil, errors.New(fmt.Sprintf("bad 'Look' 'count' param value [%s]", value))
     }
 
-    return &dchttputil.RequestLook{Count:count}, nil
+    return &dcuhttp.RequestLook{Count:count}, nil
 }
 
-func SplitRequestCheck(paramName string, queryParams string) (*dchttputil.RequestCheck, error) {
+func SplitRequestCheck(paramName string, queryParams string) (*dcuhttp.RequestCheck, error) {
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
         return nil, errors.New("bad 'Check' 'key' param key")
     }
 
-    return &dchttputil.RequestCheck{Key:value}, nil
+    return &dcuhttp.RequestCheck{Key:value}, nil
 }
 
-func SplitRequestPoints(paramName string, queryParams string) (*dchttputil.RequestPoints, error) {
+func SplitRequestPoints(paramName string, queryParams string) (*dcuhttp.RequestPoints, error) {
     if len(queryParams) == 0 {
-        return &dchttputil.RequestPoints{Count:0}, nil
+        return &dcuhttp.RequestPoints{Count:0}, nil
     }
     
     paramsMap := SplitQueryParams(queryParams)
@@ -155,17 +155,17 @@ func SplitRequestPoints(paramName string, queryParams string) (*dchttputil.Reque
         return nil, errors.New(fmt.Sprintf("bad 'Points' 'count' param value [%s]", value))
     }
     
-    return &dchttputil.RequestPoints{Count:count}, nil
+    return &dcuhttp.RequestPoints{Count:count}, nil
 }
 
-func SplitRequestRemove(paramName string, queryParams string) (*dchttputil.RequestRemove, error) {
+func SplitRequestRemove(paramName string, queryParams string) (*dcuhttp.RequestRemove, error) {
     paramsMap := SplitQueryParams(queryParams)
     value, ok := paramsMap[paramName]
     if ! ok {
         return nil, errors.New("bad 'Remove' 'key' param key")
     }
     
-    return &dchttputil.RequestRemove{Key:value}, nil
+    return &dcuhttp.RequestRemove{Key:value}, nil
 }
 
 /////////////////////////////// END HTTP SPLITTERS /////////////////////////////

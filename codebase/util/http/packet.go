@@ -59,30 +59,3 @@ type RequestRemove struct {
 type RequestCheck struct {
     Key string
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-type Request1013 struct {
-    ID      int
-    Key     string
-}
-
-type Response1013 struct {
-    ID      int
-    Key     string
-    Point   string
-    Status  bool
-    Address string
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-type Request777 struct {
-    ID     int
-    Status bool
-}
-
-type Request88 struct {
-    ID   int
-    Addr string
-}

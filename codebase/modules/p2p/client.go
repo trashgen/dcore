@@ -3,37 +3,56 @@ package p2p
 import (
     "log"
     "net"
-    "time"
     "bufio"
-    dctcpsrvutil "dcore/codebase/util/tcp/server"
+    "dcore/codebase/modules/p2p/meta"
 )
 
-type Client struct {}
-
-func NewP2PClient() *Client {
-    return &Client{}
+type client struct {
+    *mediator
+    hostConn        net.Conn
+    regHostAddr     string
+    thoseNodeKey    string
+    toRequest       chan []byte
+    responseHandler meta.ResponseHandler
 }
 
-func (this *Client) Connect(address string) bool {
-    hostConn, err := net.Dial("tcp", address)
+func newClient(m *mediator, thoseNodeKey string, addr string, responseHandler meta.ResponseHandler) *client {
+    return &client{
+        mediator        : m,
+        toRequest       : make(chan []byte),
+        regHostAddr     : addr,
+        thoseNodeKey    : thoseNodeKey,
+        responseHandler : responseHandler}
+}
+
+func (this *client) Connect() bool {
+    var err error
+    this.hostConn, err = net.Dial("tcp", this.regHostAddr)
     if err != nil {
-        log.Printf("Can't connect to p2p host [%s]\n", address)
+        log.Printf("Can't connect to p2p host [%s]\n", this.regHostAddr)
         return false
     }
 
     go func() {
-        for {
-            request := dctcpsrvutil.BuildPacket111(address)
-            hostConn.Write(request)
-            response, err := bufio.NewReader(hostConn).ReadString('\n')
+        for request := range this.toRequest {
+            _, err := this.hostConn.Write(request)
             if err != nil {
-                log.Printf("P2P Client receive error %s\n", err.Error())
                 return
             }
-            log.Printf("Response on Client: [%s]\n", response)
-            time.Sleep(time.Second)
+            response, err := bufio.NewReader(this.hostConn).ReadString('\n')
+            if err != nil {
+                return
+            }
+            err = this.responseHandler.Run(response, this.hostConn)
+            if err != nil {
+                return
+            }
         }
     }()
 
     return true
+}
+
+func (this *client) Send(request string) {
+    this.toRequest <- []byte(request)
 }

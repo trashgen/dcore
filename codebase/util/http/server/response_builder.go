@@ -40,11 +40,11 @@ func BuildRootResponse(cmdConfig *config.HTTPCommands) []byte {
     sb := strings.Builder{}
     sb.WriteString("<h1>Point help:</h1>")
     sb.WriteString("<b>Root page</b>: You are here now<br>")
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to register on Point. No query params. Key (string) as result<br>", cmdConfig.Reg.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to register on Point. No query params. ThoseNodeKey (string) as result<br>", cmdConfig.Reg.Name))
     sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Nodes. If query param 'count' here with (int) > 0 as value - then limit number of Nodes to send in Response<br>", cmdConfig.Look.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to check if Node is registered at this Point. Key (string) as query param required<br>", cmdConfig.Check.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to check if Node is registered at this Point. ThoseNodeKey (string) as query param required<br>", cmdConfig.Check.Name))
     sb.WriteString(fmt.Sprintf("<b>%s</b>: Request list of active Points. If query param 'count' here with (int) > 0 as value - then limit number of Points to send in Response<br>", cmdConfig.Points.Name))
-    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to remove Node. Key (string) as query param required<br>", cmdConfig.Remove.Name))
+    sb.WriteString(fmt.Sprintf("<b>%s</b>: Request to remove Node. ThoseNodeKey (string) as query param required<br>", cmdConfig.Remove.Name))
 
     return []byte(sb.String())
 }

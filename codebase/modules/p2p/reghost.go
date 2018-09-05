@@ -6,21 +6,22 @@ import (
     "net"
     "bufio"
     "errors"
-    dcutil "dcore/codebase/util"
-    dctcpsrvutil "dcore/codebase/util/tcp/server"
+    "dcore/codebase/modules/p2p/meta"
 )
 
 type regHostModule struct {
     *mediator
     port       int
+    handler    meta.RequestHandler
     regHost    net.Listener
     newConn    chan net.Conn
     removeConn chan net.Conn
 }
 
-func newRegHostModule(dataBlock *mediator) *regHostModule {
+func newRegHostModule(m *mediator) *regHostModule {
     return &regHostModule{
-        mediator   : dataBlock,
+        handler    : newRegRequestHandler(m),
+        mediator   : m,
         newConn    : make(chan net.Conn),
         removeConn : make(chan net.Conn)}
 }
@@ -76,78 +77,22 @@ func (this *regHostModule) onRemoveConnection() {
 func (this *regHostModule) createP2PLine(conn net.Conn) {
     go func() {
         for {
-            var err error
             data, err := bufio.NewReader(conn).ReadString('\n')
             if err != nil {
-                this.removeConn <- conn
-                return
+                break
             }
 
-            packetID, params, err := dcutil.SplitPacketIDWithData(data)
+            response, err := this.handler.Run(data, conn)
             if err != nil {
-                this.removeConn <- conn
-                return
+                break
             }
 
-            switch packetID {
-                case dctcpsrvutil.RegPacketID():
-                    this.answerTo1013Request(conn, params, conn.RemoteAddr())
-                case dctcpsrvutil.DeathPacketID():
-                    this.handle777Request(params)
-                case dctcpsrvutil.ConfirmPacketID():
-                    if this.handle88Request(params) {
-                        return
-                    }
-                    log.Fatal("Error with confirm P2P Connect\n")
+            if response != nil {
+                if _, err = conn.Write(response); err != nil {
+                    break
+                }
             }
         }
+        this.removeConn <- conn
     }()
-}
-
-func (this *regHostModule) answerTo1013Request(conn net.Conn, params []string, address net.Addr) {
-    request, err := dcutil.SplitPacket1013RequestParams(params)
-    if err != nil {
-        log.Print(err.Error())
-        return
-    }
-
-    var response []byte
-    ipOtherNode := dcutil.RemovePortFromAddressString(address.String())
-    status := this.clientModule.RequestCheck(request.Key)
-    if status {
-        thisHostAddress := this.StartHost()
-        if len(thisHostAddress) == 0 {
-            // TODO : обработать, что не могу поднять хост
-        }
-        response = dctcpsrvutil.BuildGoodPacket1013Response(status, this.Key, thisHostAddress)
-    } else {
-        log.Printf("Can't reg node with invalid key [%s]\n", request.Key)
-        response = dctcpsrvutil.BuildBadPacket1013Response(status)
-        this.toBlackList <- ipOtherNode
-        this.removeConn <- conn
-    }
-
-    _, err = conn.Write(response)
-    if err != nil {
-        this.removeConn <- conn
-        return
-    }
-}
-
-func (this *regHostModule) handle777Request(params []string) {
-    if request, err := dcutil.SplitPacket777RequestParams(params); ! request.Status || err != nil {
-        log.Fatal("To The Death!")
-    }
-}
-
-func (this *regHostModule) handle88Request(params []string) bool {
-    // TODO : Connect to P2P
-    request, err := dcutil.SplitPacket88RequestParams(params)
-    if err != nil {
-        log.Print("To The Death!")
-        return false
-    }
-
-    this.StartClient(request.Addr)
-    return true
 }

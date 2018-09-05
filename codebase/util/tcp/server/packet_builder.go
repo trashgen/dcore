@@ -27,8 +27,8 @@ func BuildPacket777(status bool) []byte {
     return []byte(fmt.Sprintf("777\t%s\n", strconv.FormatBool(status)))
 }
 
-func BuildPacket88(addr string) []byte {
-    return []byte(fmt.Sprintf("88\t%s\n", addr))
+func BuildPacket88(key string, addr string) []byte {
+    return []byte(fmt.Sprintf("88\t%s\t%s\n", key, addr))
 }
 
 func BuildPacket111(addr string) []byte {
