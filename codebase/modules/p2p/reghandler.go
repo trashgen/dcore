@@ -42,7 +42,7 @@ func (this *regRequestHandler) handle1013Request(params []string, address net.Ad
 
     var response []byte
     ipOtherNode := dcutil.RemovePortFromAddressString(address.String())
-    status := this.clientModule.RequestCheck(request.ThoseNodeKey)
+    status := this.clientModule.RequestCheck(request.ThoseNodeKey + "asdqwe")
     if status {
         l := newLine(this.mediator, request.ThoseNodeKey)
         l.startHost()
