@@ -1,7 +1,6 @@
 package p2p
 
 import (
-    "dcore/codebase/modules/p2p/meta"
     "dcore/codebase/modules/persistance"
 )
 
@@ -11,8 +10,8 @@ type NodeModule struct {
     *regClientModule
 }
 
-func NewNodeModule(requestHandler meta.RequestHandler, responseHandler meta.ResponseHandler) *NodeModule {
-    mediator := newMediator(requestHandler, responseHandler)
+func NewNodeModule() *NodeModule {
+    mediator := newMediator()
     return &NodeModule{
         mediator        : mediator,
         regHostModule   : newRegHostModule(mediator),

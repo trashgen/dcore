@@ -14,7 +14,7 @@ type Response1013 struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-type Request777 struct {
+type Command777 struct {
     ID     int
     Status bool
 }
@@ -25,7 +25,12 @@ type Request88 struct {
     ThoseNodeKey string
 }
 
-type RequestResponse111 struct {
+type Response88 struct {
+    ID           int
+    ThoseNodeKey string
+}
+
+type Chain111 struct {
     ID           int
     Message      string
     ThoseNodeKey string

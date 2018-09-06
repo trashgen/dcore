@@ -5,32 +5,32 @@ import (
     "strconv"
 )
 
-func RegPacketID() int {return 1013}
-func DeathPacketID() int {return 777}
-func ConfirmPacketID() int {return 88}
+func RegPacket1013ID() int   {return 1013}
+func DeathPacket777ID() int  {return 777}
+func ConfirmPacket88ID() int {return 88}
 
 // TODO : расширить адресом поинта
-func BuildPacket1013Request(key string) []byte {
+func BuildRequest1013(key string) []byte {
     return []byte(fmt.Sprintf("1013\t%s\n", key))
 }
 
 // TODO : расширить адресом поинта
-func BuildGoodPacket1013Response(status bool, key string, address string) []byte {
+func BuildGoodResponse1013(status bool, key string, address string) []byte {
     return []byte(fmt.Sprintf("1013\t%s\t%s\t%s\n", strconv.FormatBool(status), key, address))
 }
 
-func BuildBadPacket1013Response(status bool) []byte {
+func BuildBadResponse1013(status bool) []byte {
     return []byte(fmt.Sprintf("1013\t%s\n", strconv.FormatBool(status)))
 }
 
-func BuildPacket777(status bool) []byte {
+func BuildCommand777(status bool) []byte {
     return []byte(fmt.Sprintf("777\t%s\n", strconv.FormatBool(status)))
 }
 
-func BuildPacket88(key string, addr string) []byte {
+func BuildRequest88(key string, addr string) []byte {
     return []byte(fmt.Sprintf("88\t%s\t%s\n", key, addr))
 }
 
-func BuildPacket111(addr string) []byte {
-    return []byte(fmt.Sprintf("111\tHello, World to %s!!\n", addr))
+func BuildResponse88(key string) []byte {
+    return []byte(fmt.Sprintf("88\t%s\n", key))
 }

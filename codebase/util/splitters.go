@@ -52,28 +52,19 @@ func SplitPacket1013RequestParams(params []string) (*dcutcp.Request1013, error) 
 }
 
 // TODO : Переделать по аналогии с SplitPacket1013RequestParams
-func SplitPacket1013Response(data string) (*dcutcp.Response1013, error) {
-    params := SplitTCPParams(strings.TrimSuffix(data, "\n"))
-    if len(params) != 4 {
-        return nil, errors.New(fmt.Sprintf("bad 1013 response [%s]", data))
+func SplitPacket1013Response(params []string) (*dcutcp.Response1013, error) {
+    if len(params) != 3 {
+        return nil, errors.New(fmt.Sprintf("bad 1013 response [%#v]", params))
     }
-
-    id, err := strconv.Atoi(params[0])
+    status, err := strconv.ParseBool(params[0])
     if err != nil {
         return nil, err
     }
-
-    status, err := strconv.ParseBool(params[1])
-    if err != nil {
-        return nil, err
-    }
-
-    key, address := params[2], params[3]
-
-    return &dcutcp.Response1013{ID:id, Status:status, ThoseNodeKey:key, Address:address}, nil
+    thoseNodeKey, thoseHostAddr := params[1], params[2]
+    return &dcutcp.Response1013{ID:1013, Status:status, ThoseNodeKey: thoseNodeKey, Address: thoseHostAddr}, nil
 }
 
-func SplitPacket777RequestParams(params []string) (*dcutcp.Request777, error) {
+func SplitCommand777RequestParams(params []string) (*dcutcp.Command777, error) {
     if len(params) != 1 {
         return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
     }
@@ -81,14 +72,21 @@ func SplitPacket777RequestParams(params []string) (*dcutcp.Request777, error) {
     if err != nil {
         return nil, err
     }
-    return &dcutcp.Request777{ID:777, Status:status}, nil
+    return &dcutcp.Command777{ID:777, Status:status}, nil
 }
 
-func SplitPacket88RequestParams(params []string) (*dcutcp.Request88, error) {
+func SplitRequest88RequestParams(params []string) (*dcutcp.Request88, error) {
     if len(params) != 2 {
-        return nil, errors.New(fmt.Sprintf("bad 777 request [%#v]", params))
+        return nil, errors.New(fmt.Sprintf("bad 88 request [%#v]", params))
     }
-    return &dcutcp.Request88{ID:777, ThoseNodeKey: params[0], HostAddr:params[1]}, nil
+    return &dcutcp.Request88{ID:88, ThoseNodeKey: params[0], HostAddr:params[1]}, nil
+}
+
+func SplitResponse88Params(params []string) (*dcutcp.Response88, error) {
+    if len(params) != 1 {
+        return nil, errors.New(fmt.Sprintf("bad 88 response [%#v]", params))
+    }
+    return &dcutcp.Response88{ID:88, ThoseNodeKey: params[0]}, nil
 }
 
 ////////////////////////////// END TCP SPLITTERS ///////////////////////////////

@@ -1,58 +1,46 @@
 package p2p
 
 import (
-    "log"
+    "fmt"
     "net"
-    "bufio"
-    "dcore/codebase/modules/p2p/meta"
+    "errors"
+    "log"
 )
 
 type client struct {
     *mediator
-    hostConn        net.Conn
-    regHostAddr     string
-    thoseNodeKey    string
-    toRequest       chan []byte
-    responseHandler meta.ResponseHandler
+    outCommand <-chan string
 }
 
-func newClient(m *mediator, thoseNodeKey string, addr string, responseHandler meta.ResponseHandler) *client {
-    return &client{
-        mediator        : m,
-        toRequest       : make(chan []byte),
-        regHostAddr     : addr,
-        thoseNodeKey    : thoseNodeKey,
-        responseHandler : responseHandler}
+func newClient(outCommand <-chan string) *client {
+    return &client{outCommand: outCommand}
 }
 
-func (this *client) Connect() bool {
-    var err error
-    this.hostConn, err = net.Dial("tcp", this.regHostAddr)
+func (this *client) Connect(thoseHostAddr string) error {
+    hostConn, err := net.Dial("tcp", thoseHostAddr)
     if err != nil {
-        log.Printf("Can't connect to p2p host [%s]\n", this.regHostAddr)
-        return false
+        return errors.New(fmt.Sprintf("Can't connect to p2p host [%s]: [%s]\n", thoseHostAddr, err.Error()))
     }
 
+    this.handleConn(hostConn)
+    return nil
+}
+
+func (this *client) handleConn(conn net.Conn) {
     go func() {
-        for request := range this.toRequest {
-            _, err := this.hostConn.Write(request)
-            if err != nil {
-                return
-            }
-            response, err := bufio.NewReader(this.hostConn).ReadString('\n')
-            if err != nil {
-                return
-            }
-            err = this.responseHandler.Run(response, this.hostConn)
-            if err != nil {
-                return
+        for outCommand := range this.outCommand {
+            request, hasRequest := doSomeOut(outCommand)
+            if hasRequest {
+                // decomment for test that has echo message
+                // log.Println(request)
+                if _, err := conn.Write([]byte(request)); err != nil {
+                    log.Println("Client: Error on send data to host")
+                }
             }
         }
     }()
-
-    return true
 }
 
-func (this *client) Send(request string) {
-    this.toRequest <- []byte(request)
+func doSomeOut(outCommand string) (string, bool) {
+    return fmt.Sprintf("Request for: [%s]\n", outCommand), true
 }

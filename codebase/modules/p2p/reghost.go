@@ -53,7 +53,7 @@ func (this *regHostModule) onNewConnection() {
     go func() {
         for conn := range this.newConn {
             func(c net.Conn) {
-                log.Printf("Add Connection [%s]\n", c.RemoteAddr())
+                log.Printf("Add Reg Connection [%s]\n", c.RemoteAddr())
                 this.createP2PLine(c)
             }(conn)
         }
@@ -63,27 +63,33 @@ func (this *regHostModule) onNewConnection() {
 func (this *regHostModule) onRemoveConnection() {
     go func() {
         for conn := range this.removeConn {
-            log.Printf("Remove Connection [%s]\n", conn.RemoteAddr())
+            log.Printf("Remove Reg Connection [%s]\n", conn.RemoteAddr())
         }
     }()
 }
 
 func (this *regHostModule) createP2PLine(conn net.Conn) {
     go func() {
+        var err error
         for {
-            data, err := bufio.NewReader(conn).ReadString('\n')
+            var data string
+            data, err = bufio.NewReader(conn).ReadString('\n')
             if err != nil {
                 break
             }
-            response, err := this.handler.Run(data, conn)
+            var response []byte
+            var hasResponseData bool
+            response, hasResponseData, err = this.handler.Run(data, conn)
             if err != nil {
-                log.Print(err.Error())
+                log.Printf("Reg host handler error [%s]: [%s]\n", data, err.Error())
                 break
             }
-            if response != nil {
+            if hasResponseData {
                 if _, err = conn.Write(response); err != nil {
                     break
                 }
+            } else {
+                break
             }
         }
         this.removeConn <- conn

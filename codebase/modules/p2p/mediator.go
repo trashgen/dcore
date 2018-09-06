@@ -5,35 +5,28 @@ import (
     dcutil "dcore/codebase/util"
     dcconf "dcore/codebase/modules/config"
     dchttp "dcore/codebase/modules/http/client"
-    "dcore/codebase/modules/p2p/meta"
 )
 
 // Mediator pattern
 type mediator struct {
-    ThisNodeKey  string
-    hosts        []*host
-    clients      map[string]*client
-    cmdConfig    *dcconf.HTTPCommands
-    nodeConfig   *dcconf.NodeConfig
-    clientConfig *dcconf.ClientConfig
-    clientModule *dchttp.ClientModule
-    toBlackList  chan string
-    requestHandler  meta.RequestHandler
-    responseHandler meta.ResponseHandler
+    ThisNodeKey     string
+    lines           map[string]*line
+    toBlackList     chan string
+    cmdConfig       *dcconf.HTTPCommands
+    nodeConfig      *dcconf.NodeConfig
+    clientConfig    *dcconf.ClientConfig
+    clientModule    *dchttp.HTTPClient
 }
 
-func newMediator(requestHandler meta.RequestHandler, responseHandler meta.ResponseHandler) *mediator {
+func newMediator() *mediator {
     nodeConfig, cmdConfig, clientConfig := loadConfigs()
     return &mediator{
-        hosts           : make([]*host, 0),
-        clients         : make(map[string]*client),
+        lines           : make(map[string]*line),
         cmdConfig       : cmdConfig,
         nodeConfig      : nodeConfig,
         toBlackList     : make(chan string, 128),
         clientConfig    : clientConfig,
-        clientModule    : dchttp.NewClientModule(clientConfig, cmdConfig),
-        requestHandler  : requestHandler,
-        responseHandler : responseHandler}
+        clientModule    : dchttp.NewClientModule(clientConfig, cmdConfig)}
 }
 
 func loadConfigs() (*dcconf.NodeConfig, *dcconf.HTTPCommands, *dcconf.ClientConfig) {
