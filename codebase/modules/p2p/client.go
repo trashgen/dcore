@@ -31,8 +31,6 @@ func (this *client) handleConn(conn net.Conn) {
         for outCommand := range this.outCommand {
             request, hasRequest := doSomeOut(outCommand)
             if hasRequest {
-                // decomment for test that has echo message
-                // log.Println(request)
                 if _, err := conn.Write([]byte(request)); err != nil {
                     log.Println("Client: Error on send data to host")
                 }

@@ -5,6 +5,7 @@ import (
     "log"
     "time"
     "errors"
+    "strconv"
     "strings"
     "net/http"
     "io/ioutil"
@@ -34,7 +35,6 @@ func (this *HTTPClient) RequestReg(port int) (string, error) {
     if err != nil {
         return "", errors.New(fmt.Sprintf("Error by getting response 'Reg' from Point [%s]: [%s]\n", url, err.Error()))
     }
-
     return fmt.Sprintf("%s", response), nil
 }
 
@@ -49,18 +49,15 @@ func (this *HTTPClient) RequestLook(maxPoints int, count int) []string {
             urls = append(urls, buildURLWithParams(this.clientConfig.EntryPoints[i], &this.cmdConfig.Look, count))
         }
     }
-
     for _, url := range urls {
         response, err := this.getRawContent(url)
         if err != nil {
             log.Printf("Error by getting response 'Look' from Point [%s]: [%s]\n", url, err.Error())
             continue
         }
-
         regHosts := dcutil.ScanString(strings.TrimSuffix(response, "\n"), '\t')
         out = append(out, regHosts...)
     }
-
     return out
 }
 
@@ -74,7 +71,6 @@ func (this *HTTPClient) RequestPoints(maxPoints int, count int) string {
             urls = append(urls, buildURLWithParams(this.clientConfig.EntryPoints[i], &this.cmdConfig.Points, count))
         }
     }
-    
     var out string
     for _, url := range urls {
         response, err := this.getRawContent(url)
@@ -84,10 +80,8 @@ func (this *HTTPClient) RequestPoints(maxPoints int, count int) string {
             
             return errDesc
         }
-        
         out += fmt.Sprintf("%s\n", response)
     }
-    
     return out
 }
 
@@ -100,7 +94,6 @@ func (this *HTTPClient) RequestRoot() string {
         
         return err
     }
-
     return fmt.Sprintf("%s\n", response)
 }
 
@@ -111,11 +104,9 @@ func (this *HTTPClient) RequestCheck(key string) bool {
         log.Print(fmt.Sprintf("Error by getting response 'Check' from Point [%s]: [%s]\n", url, err.Error()))
         return false
     }
-
-    // TODO : Вынести преобразование в функцию
-    status := true
-    if response == "false" {
-        status = false
+    status, err := strconv.ParseBool(response)
+    if err != nil {
+        log.Fatalln(err.Error())
     }
     return status
 }
@@ -129,7 +120,6 @@ func (this *HTTPClient) RequestRemove(key string) string {
         
         return err
     }
-    
     return fmt.Sprintf("%s\n", response)
 }
 
@@ -142,12 +132,10 @@ func (this *HTTPClient) getRawContent(url string) (string, error) {
         log.Print(err)
         return "", err
     }
-    
     bodyBytes, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         log.Fatal(err)
     }
-    
     return string(bodyBytes), nil
 }
 
@@ -160,12 +148,10 @@ func buildURLWithParams(pointAddress string, commandDesc *dcconf.CommandDesc, pa
     if ok {
         return fmt.Sprintf("%s/%s?%s=%s", pointAddress, commandDesc.Name, commandDesc.Param, maybeString)
     }
-
     maybeInt, ok := param.(int)
     if ok {
         return fmt.Sprintf("%s/%s?%s=%d", pointAddress, commandDesc.Name, commandDesc.Param, maybeInt)
     }
-
     log.Fatalf("URL with bad param [%#v]\n", param)
     return out
 }

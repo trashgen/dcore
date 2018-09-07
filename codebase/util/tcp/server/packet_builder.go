@@ -9,12 +9,12 @@ func RegPacket1013ID() int   {return 1013}
 func DeathPacket777ID() int  {return 777}
 func ConfirmPacket88ID() int {return 88}
 
-// TODO : расширить адресом поинта
+// TODO : расширить адресом поинта. Актуально когда будет более одного Поинта в системе
 func BuildRequest1013(key string) []byte {
     return []byte(fmt.Sprintf("1013\t%s\n", key))
 }
 
-// TODO : расширить адресом поинта
+// TODO : расширить адресом поинта. Актуально когда будет более одного Поинта в системе
 func BuildGoodResponse1013(status bool, key string, address string) []byte {
     return []byte(fmt.Sprintf("1013\t%s\t%s\t%s\n", strconv.FormatBool(status), key, address))
 }

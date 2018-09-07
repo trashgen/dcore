@@ -56,8 +56,6 @@ func (this *line) handleCommand() {
         for inCommand := range this.inCommand {
             response, hasResponse := doSomeIn(inCommand)
             if hasResponse {
-                // decomment for test that has echo message
-                // log.Println(response)
                 this.outCommand <- response
             }
         }
