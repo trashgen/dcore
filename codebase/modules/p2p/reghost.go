@@ -103,11 +103,11 @@ func (this *regHostModule) Handle(data string, conn net.Conn) ([]byte, bool, err
         return nil, false, err
     }
     switch packetID {
-        case dcutcp.RegPacket1013ID():
+        case dcutcp.RegPacket1013ID:
             return this.handle1013Request(params, conn.RemoteAddr())
-        case dcutcp.DeathPacket777ID():
+        case dcutcp.DeathPacket777ID:
             return this.handle777Command(params)
-        case dcutcp.ConfirmPacket88ID():
+        case dcutcp.ConfirmPacket88ID:
             return this.handle88Command(params)
     }
     return nil, false, nil
@@ -130,6 +130,7 @@ func (this *regHostModule) handle1013Request(params []string, address net.Addr) 
     } else {
         response = dcutcp.BuildBadResponse1013(status)
         err = errors.New(fmt.Sprintf("Can't reg node with invalid key [%s]\n", request.ThoseNodeKey))
+        // TODO : this.clientModule.RequestBan(request)
         this.toBlackList <- ipOtherNode
     }
     

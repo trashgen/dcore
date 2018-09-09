@@ -6,10 +6,16 @@ import (
     "strings"
     "crypto/md5"
     "encoding/hex"
-    "dcore/codebase/modules/config"
     dcutil "dcore/codebase/util"
-    dchttputil "dcore/codebase/util/http"
+    "dcore/codebase/modules/config"
 )
+
+// TODO !!!!!! : Перепелить в type ResponseBuilder struct {} по аналогии с type RequestParser struct
+
+// Чтобы все в одном месте и в одном стиле.
+func BuildBanResponse() []byte {
+    return []byte("1")
+}
 
 func BuildRegResponse(remoteAddr string, secret string) (response []byte, key string, ip string) {
     response = make([]byte, 0)
@@ -19,8 +25,8 @@ func BuildRegResponse(remoteAddr string, secret string) (response []byte, key st
     return []byte(key), key, dcutil.RemovePortFromAddressString(remoteAddr)
 }
 
-func BuildLookOrPointsResponse(nodes map[string]*dchttputil.ConnectionID, count int) []byte {
-    if count > len(nodes) {
+func BuildLookOrPointsResponse(nodes map[string]*ConnectionID, count int) []byte {
+    if count  > len(nodes) {
         count = len(nodes)
     }
 
@@ -49,7 +55,7 @@ func BuildRootResponse(cmdConfig *config.HTTPCommands) []byte {
     return []byte(sb.String())
 }
 
-func BuildCheckOrRemoveResponse(nodes map[string]*dchttputil.ConnectionID, key string) (response []byte, ok bool) {
+func BuildCheckOrRemoveResponse(nodes map[string]*ConnectionID, key string) (response []byte, ok bool) {
     var result string
     _, ok = nodes[key]
     if ok {

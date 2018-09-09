@@ -17,6 +17,7 @@ type HTTPClient struct {
     client       *http.Client
     cmdConfig    *dcconf.HTTPCommands
     clientConfig *dcconf.ClientConfig
+    requestFactory *RequestFactory
 }
 
 func NewClientModule(config *dcconf.ClientConfig, cmdConfig *dcconf.HTTPCommands) *HTTPClient {
@@ -26,10 +27,14 @@ func NewClientModule(config *dcconf.ClientConfig, cmdConfig *dcconf.HTTPCommands
             DisableKeepAlives   : true,
             DisableCompression  : false,
             TLSHandshakeTimeout : time.Second * 11}}
-    return &HTTPClient{client: stdHTTPClient, clientConfig: config, cmdConfig: cmdConfig}
+    return &HTTPClient{
+        client         : stdHTTPClient,
+        cmdConfig      : cmdConfig,
+        clientConfig   : config,
+        requestFactory : NewRequestFactory(stdHTTPClient, cmdConfig)}
 }
 
-func (this *HTTPClient) RequestReg(port int) (string, error) {
+func (this *HTTPClient) SendRequestReg(port int) (string, error) {
     url := buildURLWithParams(this.clientConfig.EntryPoints[0], &this.cmdConfig.Reg, port)
     response, err := this.getRawContent(url)
     if err != nil {
@@ -38,7 +43,6 @@ func (this *HTTPClient) RequestReg(port int) (string, error) {
     return fmt.Sprintf("%s", response), nil
 }
 
-// TODO : Look must have 2 var query params
 func (this *HTTPClient) RequestLook(maxPoints int, count int) []string {
     out := make([]string, 0, count)
     urls := make([]string, 0, maxPoints)
@@ -61,7 +65,6 @@ func (this *HTTPClient) RequestLook(maxPoints int, count int) []string {
     return out
 }
 
-// TODO : Points must have 2 var query params
 func (this *HTTPClient) RequestPoints(maxPoints int, count int) string {
     urls := make([]string, 0, maxPoints)
     for i := 0; i < maxPoints; i++ {

@@ -18,10 +18,10 @@ func newRegClientModule(m *mediator) *regClientModule {
     return &regClientModule{mediator: m}
 }
 
-func (this *regClientModule) Connect(regListenPort int) {
+func (this *regClientModule) connect(regListenPort int) {
     var err error
-    regHosts := this.clientModule.RequestLook(1, this.nodeConfig.MaxP2PConnections)
-    this.ThisNodeKey, err = this.clientModule.RequestReg(regListenPort)
+    regHosts := this.clientModule.RequestLook(this.nodeConfig.MaxPointsCount, this.nodeConfig.MaxP2PConnections)
+    this.ThisNodeKey, err = this.clientModule.SendRequestReg(regListenPort)
     log.Printf("My reg key is [%s]\n", this.ThisNodeKey)
     if err != nil {
         log.Fatalf("Can't register at Point [%s]\n", err.Error())
@@ -51,7 +51,7 @@ func (this *regClientModule) createP2PLine(regHost string) {
 
 func (this *regClientModule) Handle(data string, conn net.Conn) ([]byte, bool, error) {
     packetID, params, err := dcutil.SplitPacketIDWithData(data)
-    if err != nil || packetID != dcutcp.RegPacket1013ID() {
+    if err != nil || packetID != dcutcp.RegPacket1013ID {
         return nil, false, err
     }
     response, err := dcutil.Split1013Response(params)
@@ -66,6 +66,7 @@ func (this *regClientModule) Handle(data string, conn net.Conn) ([]byte, bool, e
             l.startClient(response.Address)
             return dcutcp.BuildRequest88(this.ThisNodeKey, l.address), true, nil
         } else {
+            // TODO : this.clientModule.RequestBan(thisKey, thoseKey, thoseAddress)
             this.toBlackList <- dcutil.RemovePortFromAddressString(response.Address)
             return dcutcp.BuildCommand777(otherNodeStatus), true, nil
         }

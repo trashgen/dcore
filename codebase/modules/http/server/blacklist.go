@@ -1,4 +1,6 @@
-package persistance
+// +build ignore
+
+package server
 
 import (
     "fmt"
@@ -19,17 +21,17 @@ func NewBlackListModule() *BlackListModule {
     return &BlackListModule{db: dbConn}
 }
 
-func (this *BlackListModule) Save(ip string) {
-    if ! this.CheckInBlackList(ip) {
-        log.Printf("Save address [%s] to black list\n", ip)
-        if _, err := this.db.Exec(addToBlaclist(ip)); err != nil {
+func (this *BlackListModule) Save(data string) {
+    if ! this.CheckExists(data) {
+        log.Printf("Save address [%s] to black list\n", data)
+        if _, err := this.db.Exec(addToBlaclist(data)); err != nil {
             log.Fatalln(err.Error())
         }
     }
 }
 
-func (this *BlackListModule) CheckInBlackList(ip string) (exists bool) {
-    res := this.db.QueryRow(checkInBlackList(ip))
+func (this *BlackListModule) CheckExists(id string) (exists bool) {
+    res := this.db.QueryRow(checkInBlackList(id))
     if err := res.Scan(&exists); err != nil {
         log.Fatalln(err.Error())
     }

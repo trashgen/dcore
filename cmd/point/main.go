@@ -28,5 +28,5 @@ func main() {
         log.Fatal("Config: type mismatch")
     }
 
-    dchttpsrv.NewPoint(config, cmdConfig).Start()
+    dchttpsrv.NewPoint(config, cmdConfig, dchttpsrv.NewMockPersistModule()).Start()
 }

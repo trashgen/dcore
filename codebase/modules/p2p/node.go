@@ -1,9 +1,5 @@
 package p2p
 
-import (
-    "dcore/codebase/modules/persistance"
-)
-
 type NodeModule struct {
     *mediator
     *regHostModule
@@ -18,15 +14,6 @@ func NewNodeModule() *NodeModule {
         regClientModule : newRegClientModule(mediator)}
 }
 
-func (this *NodeModule) Start() (regListenPort int) {
-    regListenPort = this.startRegHost()
-    go func() {
-        postgres := persistance.NewBlackListModule()
-        defer postgres.Close()
-        for badAddress := range this.toBlackList {
-            badAddress := badAddress
-            postgres.Save(badAddress)
-        }
-    }()
-    return regListenPort
+func (this *NodeModule) Start() {
+    this.connect(this.startRegHost())
 }

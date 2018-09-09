@@ -1,39 +1,39 @@
 package server
 
 import (
+    "fmt"
     "log"
+    "net/url"
     "net/http"
-    dcutil "dcore/codebase/util"
-    "dcore/codebase/modules/persistance"
     dcconf "dcore/codebase/modules/config"
-    dcuhttp "dcore/codebase/util/http/server"
 )
 
 type Point struct {
     id              string
-    redis           *persistance.RedisModule
+    redis           *RedisModule
     config          *dcconf.PointConfig
     cmdConfig       *dcconf.HTTPCommands
+    hddPersist      HDDPersist
     checkBlackList  chan string
     resultBlackList chan bool
 }
 
-func NewPoint(config *dcconf.PointConfig, cmdConfig *dcconf.HTTPCommands) *Point {
+func NewPoint(config *dcconf.PointConfig, cmdConfig *dcconf.HTTPCommands, hddPersist HDDPersist) *Point {
     return &Point{
-        redis           : persistance.NewRedisModule(),
+        redis           : NewRedisModule(),
         config          : config,
         cmdConfig       : cmdConfig,
+        hddPersist      : hddPersist,
         checkBlackList  : make(chan string),
         resultBlackList : make(chan bool)}
 }
 
 func (this *Point) Start() {
     go func() {
-        postgres := persistance.NewBlackListModule()
-        defer postgres.Close()
+        defer this.hddPersist.Close()
         for ip := range this.checkBlackList {
             ip := ip
-            this.resultBlackList <- postgres.CheckInBlackList(ip)
+            this.resultBlackList <- this.hddPersist.CheckExists(ip)
         }
     }()
     if err := http.ListenAndServe(this.config.FormattedListenPort(), this); err != nil {
@@ -42,127 +42,105 @@ func (this *Point) Start() {
 }
 
 func (this *Point) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    this.checkBlackList <- r.URL.Hostname()
-    if <-this.resultBlackList {
-        // TODO : возможно что-то интересное будет здесь. Но пока этого достаточно - ничего плохиш не получит!
+    w.Header().Set("Connection", "close")
+    if this.checkBlackList <- r.URL.Hostname(); <-this.resultBlackList {
+        this.sendStatusForbidden(w, r.URL)
         return
     }
+    queryParams, ok := this.validateRequest(r.URL)
+    if ! ok {
+        this.sendStatusBadRequest(w, r.URL)
+        return
+    }
+    // TODO : Печально, что для обработки вышло 2 свича на одно и тоже, но пока пусть будет так.
     switch r.URL.Path[1:] {
         case this.cmdConfig.Reg.Name:
-            this.responseToReg(w, r.RemoteAddr, r.URL.RawQuery)
+            this.responseToReg(w, queryParams, r.RemoteAddr)
+        case this.cmdConfig.Ban.Name:
+            this.responseToBan(w, queryParams)
         case this.cmdConfig.Look.Name:
-            this.responseToLook(w, r.URL.RawQuery)
+            this.responseToLook(w, queryParams)
         case this.cmdConfig.Root.Name:
-            this.responseToRoot(w, r.URL.RawQuery)
+            this.responseToRoot(w)
         case this.cmdConfig.Check.Name:
-            this.responseToCheck(w, r.URL.RawQuery)
+            this.responseToCheck(w, queryParams)
         case this.cmdConfig.Points.Name:
-            this.responseToPoints(w, r.URL.RawQuery)
+            this.responseToPoints(w, queryParams)
         case this.cmdConfig.Remove.Name:
-            this.responseToRemove(w, r.URL.RawQuery)
+            this.responseToRemove(w, queryParams)
         default:
             log.Printf("ServeHTTP - Bad HTTP Command: [%s]", r.URL.Path[1:])
     }
 }
 
-func (this *Point) responseToReg(w http.ResponseWriter, remoteAddr string, queryParams string) {
-    w.Header().Set("Connection", "close")
+func (this *Point) sendStatusForbidden(w http.ResponseWriter, url *url.URL) {
+    w.WriteHeader(http.StatusForbidden)
+    w.Write([]byte(fmt.Sprintf("Access denied for: [%s]\n", url.Hostname())))
+}
 
-    if msg := "Reg requires query param 'port'\n"; len(queryParams) == 0 {
-        log.Print(msg)
-        w.Write([]byte(msg))
-        return
-    }
+func (this *Point) sendStatusBadRequest(w http.ResponseWriter, url *url.URL) {
+    w.WriteHeader(http.StatusBadRequest)
+    w.Write([]byte(fmt.Sprintf("Request is not valid format: [%s]?[%s]\n", url.Path[1:], url.RawQuery)))
+}
 
-    request, err := dcutil.SplitRequestReg(this.cmdConfig.Reg.Param, queryParams)
+func (this *Point) validateRequest(request *url.URL) (url.Values, bool) {
+    command := request.Path[1:]
+    queryParams, err := url.ParseQuery(request.RawQuery)
     if err != nil {
-        log.Print(err.Error())
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(err.Error()))
-        return
+        return nil, false
+    }
+    if ! this.cmdConfig.IsValidRequest(command, queryParams) {
+        return nil, false
     }
 
-    response, key, ip := dcuhttp.BuildRegResponse(remoteAddr, this.config.SecretPhrase)
+    return queryParams, true
+}
+
+func (this *Point) responseToBan(w http.ResponseWriter, queryParams url.Values) {
+    request := NewRequestParser(this.cmdConfig.Ban.Name, queryParams, this.cmdConfig).Ban()
+    if _, has := this.redis.GetNode(request.Key); has {
+        this.hddPersist.Save(request.Target)
+        w.Write(BuildBanResponse())
+    }
+}
+
+func (this *Point) responseToReg(w http.ResponseWriter, queryParams url.Values, remoteAddr string) {
+    request := NewRequestParser(this.cmdConfig.Reg.Name, queryParams, this.cmdConfig).Reg()
+    response, key, ip := BuildRegResponse(remoteAddr, this.config.SecretPhrase)
     this.redis.AddNode(key, ip, request.Port)
     w.Write(response)
 }
 
-func (this *Point) responseToLook(w http.ResponseWriter, queryParams string) {
-    w.Header().Set("Connection", "close")
-    request, err := dcutil.SplitRequestLook(this.cmdConfig.Look.Param, queryParams)
-    if err != nil {
-        log.Print(err.Error())
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(err.Error()))
-        return
-    }
-
-    w.Write(dcuhttp.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
+// TODO : Add param Points - use this param only after MultiPoint. Now we just can parse it.
+func (this *Point) responseToLook(w http.ResponseWriter, queryParams url.Values) {
+    request := NewRequestParser(this.cmdConfig.Look.Name, queryParams, this.cmdConfig).Look()
+    w.Write(BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Nodes))
 }
 
-func (this *Point) responseToRoot(w http.ResponseWriter, queryParams string) {
-    w.Header().Set("Connection", "close")
-    w.Write(dcuhttp.BuildRootResponse(this.cmdConfig))
+func (this *Point) responseToRoot(w http.ResponseWriter) {
+    w.Write(BuildRootResponse(this.cmdConfig))
 }
 
-func (this *Point) responseToCheck(w http.ResponseWriter, queryParams string) {
-    w.Header().Set("Connection", "close")
-    if msg := "Check requires query param 'key'\n"; len(queryParams) == 0 {
-        log.Print(msg)
-        w.Write([]byte(msg))
-    
-        return
+func (this *Point) responseToCheck(w http.ResponseWriter, queryParams url.Values) {
+    request := NewRequestParser(this.cmdConfig.Check.Name, queryParams, this.cmdConfig).Check()
+    if _, has := this.redis.GetNode(request.Key); has {
+        response, _ := BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Target)
+        w.Write(response)
     }
-
-    request, err := dcutil.SplitRequestCheck(this.cmdConfig.Check.Param, queryParams)
-    if err != nil {
-        log.Print(err.Error())
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(err.Error()))
-        
-        return
-    }
-    
-    response, _ := dcuhttp.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
-    w.Write(response)
 }
 
-func (this *Point) responseToPoints(w http.ResponseWriter, queryParams string) {
-    w.Header().Set("Connection", "close")
-    request, err := dcutil.SplitRequestPoints(this.cmdConfig.Points.Param, queryParams)
-    if err != nil {
-        log.Print(err.Error())
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(err.Error()))
-        return
-    }
-
-    w.Write(dcuhttp.BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
+func (this *Point) responseToPoints(w http.ResponseWriter, queryParams url.Values) {
+    request := NewRequestParser(this.cmdConfig.Points.Name, queryParams, this.cmdConfig).Points()
+    w.Write(BuildLookOrPointsResponse(this.redis.GetAllNodes(), request.Count))
 }
 
-func (this *Point) responseToRemove(w http.ResponseWriter, queryParams string) {
-    w.Header().Set("Connection", "close")
-    if msg := "Remove requires query param 'key'\n"; len(queryParams) == 0 {
-        log.Print(msg)
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(msg))
-
-        return
+func (this *Point) responseToRemove(w http.ResponseWriter, queryParams url.Values) {
+    request := NewRequestParser(this.cmdConfig.Remove.Name, queryParams, this.cmdConfig).Remove()
+    if _, has := this.redis.GetNode(request.Key); has {
+        response, has := BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Target)
+        if has {
+            this.redis.RemoveNode(request.Key)
+        }
+        w.Write(response)
     }
-
-    request, err := dcutil.SplitRequestRemove(this.cmdConfig.Remove.Param, queryParams)
-    if err != nil {
-        log.Print(err.Error())
-        w.WriteHeader(http.StatusBadRequest)
-        w.Write([]byte(err.Error()))
-    
-        return
-    }
-
-    response, has := dcuhttp.BuildCheckOrRemoveResponse(this.redis.GetAllNodes(), request.Key)
-    if has {
-        this.redis.RemoveNode(request.Key)
-    }
-
-    w.Write(response)
 }

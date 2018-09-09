@@ -11,7 +11,6 @@ import (
 type mediator struct {
     ThisNodeKey     string
     lines           map[string]*line
-    toBlackList     chan string
     cmdConfig       *dcconf.HTTPCommands
     nodeConfig      *dcconf.NodeConfig
     clientConfig    *dcconf.ClientConfig
@@ -24,7 +23,6 @@ func newMediator() *mediator {
         lines           : make(map[string]*line),
         cmdConfig       : cmdConfig,
         nodeConfig      : nodeConfig,
-        toBlackList     : make(chan string, 128),
         clientConfig    : clientConfig,
         clientModule    : dchttp.NewClientModule(clientConfig, cmdConfig)}
 }
