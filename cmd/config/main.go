@@ -2,7 +2,7 @@ package main
 
 import (
     dcutil "dcore/codebase/util"
-    dcconf "dcore/codebase/modules/config"
+    dcconf "dcore/codebase/module/config"
 )
 
 func main() {
@@ -11,5 +11,4 @@ func main() {
     dcutil.SaveJSONConfig(dcconf.NewPointConfig(metaConfig))
     dcutil.SaveJSONConfig(dcconf.NewClientConfig(metaConfig))
     dcutil.SaveJSONConfig(dcconf.NewNodeConfig(metaConfig))
-    dcutil.SaveJSONConfig(dcconf.NewHTTPCommands(metaConfig))
 }

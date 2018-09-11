@@ -19,15 +19,9 @@ func newRegClientModule(m *mediator) *regClientModule {
 }
 
 func (this *regClientModule) connect(regListenPort int) {
-    var err error
-    regHosts := this.clientModule.RequestLook(this.nodeConfig.MaxPointsCount, this.nodeConfig.MaxP2PConnections)
-    this.ThisNodeKey, err = this.clientModule.SendRequestReg(regListenPort)
-    log.Printf("My reg key is [%s]\n", this.ThisNodeKey)
-    if err != nil {
-        log.Fatalf("Can't register at Point [%s]\n", err.Error())
-    }
+    this.ThisNodeKey = this.clientModule.SendRequestReg(regListenPort)
+    regHosts := this.clientModule.RequestLook(this.ThisNodeKey, this.nodeConfig.MaxPointsCount, this.nodeConfig.MaxP2PConnections)
     for _, regHost := range regHosts {
-        regHost := regHost
         this.createP2PLine(regHost)
     }
 }
@@ -44,32 +38,33 @@ func (this *regClientModule) createP2PLine(regHost string) {
     if err != nil {
         log.Fatalf("Error receive Packet 1013 from reg host [%s]\n", err.Error())
     }
-    if _, _, err = this.Handle(data, conn); err != nil {
-        log.Fatalf("Reg client handler 1013 error [%s]: [%s]\n", data, err.Error())
+    response, err := this.Handle(data, conn)
+    if err != nil {
+        log.Fatalf("Reg client handler 88 error [%s]: [%s]\n", data, err.Error())
     }
+    conn.Write(response)
 }
 
-func (this *regClientModule) Handle(data string, conn net.Conn) ([]byte, bool, error) {
+func (this *regClientModule) Handle(data string, conn net.Conn) ([]byte, error) {
     packetID, params, err := dcutil.SplitPacketIDWithData(data)
     if err != nil || packetID != dcutcp.RegPacket1013ID {
-        return nil, false, err
+        return nil, err
     }
     response, err := dcutil.Split1013Response(params)
     if err != nil {
-        return nil, false, errors.New(fmt.Sprintf("regResponseHandler: [%s]", err.Error()))
+        return nil, errors.New(fmt.Sprintf("regResponseHandler: [%s]", err.Error()))
     }
     if response.Status {
-        otherNodeStatus := this.clientModule.RequestCheck(response.ThoseNodeKey)
+        otherNodeStatus := this.clientModule.RequestCheck(this.ThisNodeKey, response.Target)
         if otherNodeStatus {
-            l := newLine(this.mediator, response.ThoseNodeKey)
+            l := newLine(this.mediator, response.Target)
             l.startHost()
             l.startClient(response.Address)
-            return dcutcp.BuildRequest88(this.ThisNodeKey, l.address), true, nil
+            return dcutcp.BuildRequest88(this.ThisNodeKey, l.address), nil
         } else {
-            // TODO : this.clientModule.RequestBan(thisKey, thoseKey, thoseAddress)
-            this.toBlackList <- dcutil.RemovePortFromAddressString(response.Address)
-            return dcutcp.BuildCommand777(otherNodeStatus), true, nil
+            this.clientModule.SendRequestBan(this.ThisNodeKey, dcutil.RemovePortFromAddressString(conn.RemoteAddr().String()))
+            return dcutcp.BuildCommand777(otherNodeStatus), nil
         }
     }
-    return nil, false, errors.New(fmt.Sprintf("regResponseHandler: bad key [%s]", response.ThoseNodeKey))
+    return nil, errors.New(fmt.Sprintf("regResponseHandler: bad key [%s]", response.Target))
 }

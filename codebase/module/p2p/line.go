@@ -38,7 +38,7 @@ func (this *line) startHost() {
     if err := this.host.Start(); err != nil {
         log.Fatal(err.Error())
     }
-    log.Printf("Start Host on [%d] with key [%s]\n", this.host.port, this.thoseNodeKey)
+    log.Printf("Start Host on [%d]\n", this.host.port)
 }
 
 func (this *line) startClient(thoseHostAddr string) {
@@ -47,7 +47,7 @@ func (this *line) startClient(thoseHostAddr string) {
         // TODO : обработать невозможность прямого подключения
         log.Fatal(err.Error())
     }
-    log.Printf("Start Client on [%s] with key [%s]\n", thoseHostAddr, this.thoseNodeKey)
+    log.Printf("Start Client on [%s]\n", thoseHostAddr)
     this.handleCommand()
 }
 

@@ -1,4 +1,4 @@
-package server
+package persistence
 
 import "fmt"
 
@@ -34,8 +34,13 @@ func (this *RedisModule) AddNode(key string, ip string, port int) (out *Connecti
 }
 
 func (this *RedisModule) GetNode(key string) (result *ConnectionID, has bool) {
+    // LOL I just can't do: "return this.nodes[key]", 'cos "has" not returns by default
     result, has = this.nodes[key]
     return result, has
+}
+
+func (this *RedisModule) GetRandomNodes(count int) map[string]*ConnectionID {
+    return this.nodes
 }
 
 func (this *RedisModule) GetAllNodes() map[string]*ConnectionID {

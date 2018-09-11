@@ -3,8 +3,8 @@ package main
 //import (
 //    "log"
 //    dcutil "dcore/codebase/util"
-//    dcconf "dcore/codebase/modules/config"
-//    dchttpcli "dcore/codebase/modules/http/client"
+//    dcconf "dcore/codebase/module/config"
+//    dchttpcli "dcore/codebase/module/http/client"
 //)
 
 func main() {

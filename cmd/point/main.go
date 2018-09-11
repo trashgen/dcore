@@ -3,8 +3,9 @@ package main
 import (
     "log"
     dcutil "dcore/codebase/util"
-    dcconf "dcore/codebase/modules/config"
-    dchttpsrv "dcore/codebase/modules/http/server"
+    dcconf "dcore/codebase/module/config"
+    "dcore/codebase/module/http/persistence"
+    dchttpsrv "dcore/codebase/module/http/server"
 )
 
 func main() {
@@ -18,15 +19,5 @@ func main() {
         log.Fatal("Config: type mismatch")
     }
 
-    c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-
-    cmdConfig, ok := c.(*dcconf.HTTPCommands)
-    if ! ok {
-        log.Fatal("Config: type mismatch")
-    }
-
-    dchttpsrv.NewPoint(config, cmdConfig, dchttpsrv.NewMockPersistModule()).Start()
+    dchttpsrv.NewPoint(config, persistence.NewMockPersistModule()).Start()
 }

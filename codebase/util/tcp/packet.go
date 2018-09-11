@@ -2,14 +2,14 @@ package tcp
 
 // Пара запрос-ответ для инициализации создания лайна.
 type Request1013 struct {
-    ID           int
-    ThoseNodeKey string
+    ID     int
+    Target string
 }
 type Response1013 struct {
-    ID           int
-    Status       bool
-    Address      string
-    ThoseNodeKey string
+    ID      int
+    Status  bool
+    Address string
+    Target  string
 }
 
 // Пакет смерти. Посылается читерам, которые не прошли проверку на Point

@@ -1,4 +1,4 @@
-package server
+package persistence
 
 import "log"
 
@@ -14,8 +14,8 @@ func NewMockPersistModule() *MockPersistModule {
     return &MockPersistModule{}
 }
 
-func (this *MockPersistModule) Save(data string) {
-    log.Printf("Save [%s] to Database\n", data)
+func (this *MockPersistModule) Save(ip string) {
+    log.Printf("Save [%s] to Database\n", ip)
 }
 
 func (this *MockPersistModule) CheckExists(id string) (exists bool) {

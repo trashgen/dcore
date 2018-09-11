@@ -3,47 +3,35 @@ package p2p
 import (
     "log"
     dcutil "dcore/codebase/util"
-    dcconf "dcore/codebase/modules/config"
-    dchttp "dcore/codebase/modules/http/client"
+    dcconf "dcore/codebase/module/config"
+    dchttp "dcore/codebase/module/http/client"
 )
 
 // Mediator pattern
 type mediator struct {
     ThisNodeKey     string
     lines           map[string]*line
-    cmdConfig       *dcconf.HTTPCommands
     nodeConfig      *dcconf.NodeConfig
     clientConfig    *dcconf.ClientConfig
     clientModule    *dchttp.HTTPClient
 }
 
 func newMediator() *mediator {
-    nodeConfig, cmdConfig, clientConfig := loadConfigs()
+    nodeConfig, clientConfig := loadConfigs()
     return &mediator{
         lines           : make(map[string]*line),
-        cmdConfig       : cmdConfig,
         nodeConfig      : nodeConfig,
         clientConfig    : clientConfig,
-        clientModule    : dchttp.NewClientModule(clientConfig, cmdConfig)}
+        clientModule    : dchttp.NewClientModule(clientConfig)}
 }
 
-func loadConfigs() (*dcconf.NodeConfig, *dcconf.HTTPCommands, *dcconf.ClientConfig) {
+func loadConfigs() (*dcconf.NodeConfig, *dcconf.ClientConfig) {
     c, err := dcutil.LoadJSONConfig(dcconf.NewNodeConfig(dcconf.NewMetaConfig()))
     if err != nil {
         log.Fatal(err.Error())
     }
 
     nodeConfig, ok := c.(*dcconf.NodeConfig)
-    if ! ok {
-        log.Fatal("Config: type mismatch")
-    }
-
-    c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-
-    cmdConfig, ok := c.(*dcconf.HTTPCommands)
     if ! ok {
         log.Fatal("Config: type mismatch")
     }
@@ -58,5 +46,5 @@ func loadConfigs() (*dcconf.NodeConfig, *dcconf.HTTPCommands, *dcconf.ClientConf
         log.Fatal("Config: type mismatch")
     }
 
-    return nodeConfig, cmdConfig, clientConfig
+    return nodeConfig, clientConfig
 }

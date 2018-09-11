@@ -1,6 +1,6 @@
 // +build ignore
 
-package server
+package persistence
 
 import (
     "fmt"
@@ -23,7 +23,6 @@ func NewBlackListModule() *BlackListModule {
 
 func (this *BlackListModule) Save(data string) {
     if ! this.CheckExists(data) {
-        log.Printf("Save address [%s] to black list\n", data)
         if _, err := this.db.Exec(addToBlaclist(data)); err != nil {
             log.Fatalln(err.Error())
         }

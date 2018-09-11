@@ -42,7 +42,7 @@ func Split1013RequestParams(params []string) (*dcutcp.Request1013, error) {
     if len(params) != 1 {
         return nil, errors.New(fmt.Sprintf("bad 1013 request [%#v]", params))
     }
-    return &dcutcp.Request1013{ID:1013, ThoseNodeKey:params[0]}, nil
+    return &dcutcp.Request1013{ID:1013, Target:params[0]}, nil
 }
 
 func Split1013Response(params []string) (*dcutcp.Response1013, error) {
@@ -54,7 +54,7 @@ func Split1013Response(params []string) (*dcutcp.Response1013, error) {
         return nil, err
     }
     thoseNodeKey, thoseHostAddr := params[1], params[2]
-    return &dcutcp.Response1013{ID:1013, Status:status, ThoseNodeKey: thoseNodeKey, Address: thoseHostAddr}, nil
+    return &dcutcp.Response1013{ID:1013, Status:status, Target: thoseNodeKey, Address: thoseHostAddr}, nil
 }
 
 func SplitCommand777Params(params []string) (*dcutcp.Command777, error) {
