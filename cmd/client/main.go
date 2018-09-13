@@ -2,61 +2,68 @@ package main
 
 import (
     "log"
-    "github.com/mediocregopher/radix.v2/redis"
+    "github.com/mediocregopher/radix.v3"
     "strconv"
 )
 
-type Album struct {
-    Likes   int
-    Price  float64
-    Title  string
-    Artist string
-}
+//local result = ""
+//for i, k in ipairs(nodeKeys) do
+//  local values = redis.call("HGETALL", nodekeys[i])
+//  result = result .. values["key"] .. "-" .. values["ip"] .. ":" .. values["port"] .. "\t"
+//result = result .. "lol-"
+//end
+
+const GetRandomNodes =
+// Use case: evalsha <SHA_key:string> 0, <max_number_of_nodes:int>
+`
+local hgetall = function (key)
+  local bulk = redis.call('HGETALL', key)
+	local result = {}
+	local nextkey
+	for i, v in ipairs(bulk) do
+		if i % 2 == 1 then
+			nextkey = v
+		else
+			result[nextkey] = v
+		end
+	end
+	return result
+end
+
+local nodeKeys = redis.call("SRANDMEMBER", "nodekeys", ARGV[1])
+local result = ""
+for i, k in ipairs(nodeKeys) do
+    local values = hgetall(nodeKeys[i])
+    result = result .. values["key"] .. "-" .. values["ip"] .. ":" .. values["port"] .. "\t"
+end
+return result
+`
 
 func main() {
-    conn, err := redis.Dial("tcp", ":6379")
-    if err != nil {
-        log.Println(err.Error())
-    }
-    defer conn.Close()
-    
-    //if err := conn.Cmd("HMSET", "album:2", "title", "Black album", "artist", "Metallica", "price", 4.98, "likes", 8).Err; err != nil {
-    //    log.Fatalln(err)
-    //}
-
-    //if artist, err := conn.Cmd("HGET", "album:2", "artist").Str(); err != nil {
-    //    log.Fatalln(err)
-    //} else {
-    //    log.Printf("success: [%s]\n", artist)
-    //}
-
-    result, err := conn.Cmd("HGETALL", "album:2").Map()
+    pool, err := radix.NewPool("tcp", ":6379", 4)
     if err != nil {
         log.Fatalln(err)
     }
-    ab, err := populateAlbum(result)
-    if err != nil {
-        log.Fatalln(err)
-    }
-    log.Println(ab)
+
+    scriptID := compileScript(pool, GetRandomNodes)
+    log.Printf("ScriptID is [%s]", scriptID)
+    result := runScript(pool, scriptID, 16)
+    log.Printf("Result is [%s]", result)
+    //for _, v := range result {
+    //    log.Printf("Result is [%s]", v)
+    //}
 }
 
-func populateAlbum(reply map[string]string) (*Album, error) {
-    var err error
-    ab := new(Album)
-    ab.Title = reply["title"]
-    ab.Artist = reply["artist"]
-    // We need to use the strconv package to convert the 'price' value from a
-    // string to a float64 before assigning it.
-    ab.Price, err = strconv.ParseFloat(reply["price"], 64)
-    if err != nil {
-        return nil, err
+func compileScript(pool *radix.Pool, script string) (outKey string) {
+    if err := pool.Do(radix.Cmd(&outKey, "SCRIPT",  "LOAD", script)); err != nil {
+        log.Fatal(err)
     }
-    // Similarly, we need to convert the 'likes' value from a string to an
-    // integer.
-    ab.Likes, err = strconv.Atoi(reply["likes"])
-    if err != nil {
-        return nil, err
+    return outKey
+}
+
+func runScript(pool *radix.Pool, scriptID string, count int) (result []byte) {
+    if err := pool.Do(radix.Cmd(&result, "EVALSHA", scriptID, "0", strconv.Itoa(count))); err != nil {
+        log.Fatalln(err)
     }
-    return ab, nil
+    return result
 }
