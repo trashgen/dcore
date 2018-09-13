@@ -1,56 +1,62 @@
 package main
 
-//import (
-//    "log"
-//    dcutil "dcore/codebase/util"
-//    dcconf "dcore/codebase/module/config"
-//    dchttpcli "dcore/codebase/module/http/client"
-//)
+import (
+    "log"
+    "github.com/mediocregopher/radix.v2/redis"
+    "strconv"
+)
+
+type Album struct {
+    Likes   int
+    Price  float64
+    Title  string
+    Artist string
+}
 
 func main() {
-    out := make([]int, 0)
-    out = append(out, 1)
-    s := out[2:]
-    for _, v := range s {
-        print (v)
+    conn, err := redis.Dial("tcp", ":6379")
+    if err != nil {
+        log.Println(err.Error())
     }
+    defer conn.Close()
+    
+    //if err := conn.Cmd("HMSET", "album:2", "title", "Black album", "artist", "Metallica", "price", 4.98, "likes", 8).Err; err != nil {
+    //    log.Fatalln(err)
+    //}
 
-    //c, err := dcutil.LoadJSONConfig(dcconf.NewClientConfig(dcconf.NewMetaConfig()))
-    //if err != nil {
-    //    log.Fatal(err.Error())
+    //if artist, err := conn.Cmd("HGET", "album:2", "artist").Str(); err != nil {
+    //    log.Fatalln(err)
+    //} else {
+    //    log.Printf("success: [%s]\n", artist)
     //}
-    //
-    //config, ok := c.(*dcconf.ClientConfig)
-    //if ! ok {
-    //    log.Fatal("Config: type mismatch")
-    //}
-    //
-    //c, err = dcutil.LoadJSONConfig(dcconf.NewHTTPCommands(dcconf.NewMetaConfig()))
-    //if err != nil {
-    //    log.Fatal(err.Error())
-    //}
-    //
-    //cmdConfig, ok := c.(*dcconf.HTTPCommands)
-    //if ! ok {
-    //    log.Fatal("Config: type mismatch")
-    //}
-    //
-    //httpClient := dchttpcli.NewClientModule(config, cmdConfig)
-    //data := httpClient.RequestRoot()
-    //log.Print("================ TESTING HTTP ================\n")
-    //log.Printf("Response Root is\n[%s]\n", data)
-    //data = httpClient.RequestLook(1, 3)
-    //log.Printf("Response Look is\n[%s]\n", data)
-    //data, _ = httpClient.SendRequestReg(6666)
-    //log.Printf("Response Reg is\n[%s]\n", data)
-    //data = httpClient.RequestCheck("nodeKey1")
-    //log.Printf("Response Check is\n[%s]\n", data)
-    //data = httpClient.RequestRemove("nodeKey1")
-    //log.Printf("Response Remove is\n[%s]\n", data)
-    //data = httpClient.RequestCheck("nodeKey1")
-    //log.Printf("Response Check is\n[%s]\n", data)
-    //data = httpClient.RequestLook(1, 3)
-    //log.Printf("Response Look is\n[%s]\n", data)
-    //data = httpClient.RequestPoints(1, 3)
-    //log.Printf("Response Points is\n[%s]\n", data)
+
+    result, err := conn.Cmd("HGETALL", "album:2").Map()
+    if err != nil {
+        log.Fatalln(err)
+    }
+    ab, err := populateAlbum(result)
+    if err != nil {
+        log.Fatalln(err)
+    }
+    log.Println(ab)
+}
+
+func populateAlbum(reply map[string]string) (*Album, error) {
+    var err error
+    ab := new(Album)
+    ab.Title = reply["title"]
+    ab.Artist = reply["artist"]
+    // We need to use the strconv package to convert the 'price' value from a
+    // string to a float64 before assigning it.
+    ab.Price, err = strconv.ParseFloat(reply["price"], 64)
+    if err != nil {
+        return nil, err
+    }
+    // Similarly, we need to convert the 'likes' value from a string to an
+    // integer.
+    ab.Likes, err = strconv.Atoi(reply["likes"])
+    if err != nil {
+        return nil, err
+    }
+    return ab, nil
 }

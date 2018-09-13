@@ -38,7 +38,8 @@ func (this *HTTPClient) SendRequestReg(port int) string {
 func (this *HTTPClient) RequestLook(key string, numPoints int, numNodes int) map[string]string {
     // TODO : На данный момент нет мультипоинта - посему один запрос на нулевой поинт
     out := make(map[string]string)
-    response := this.getRawContent(command.NewLookRequest(key, numPoints, numNodes).RequestToURL(this.clientConfig.EntryPoints[0]))
+    url := command.NewLookRequest(key, numPoints, numNodes).RequestToURL(this.clientConfig.EntryPoints[0])
+    response := this.getRawContent(url)
     triplets := dcutil.ScanString(response, '\t')
     for _, triplet := range triplets {
         values := strings.Split(triplet, "-")

@@ -22,6 +22,7 @@ func (this *regClientModule) connect(regListenPort int) {
     this.ThisNodeKey = this.clientModule.SendRequestReg(regListenPort)
     regHosts := this.clientModule.RequestLook(this.ThisNodeKey, this.nodeConfig.MaxPointsCount, this.nodeConfig.MaxP2PConnections)
     for _, regHost := range regHosts {
+        log.Printf("RegHost: [%s]", regHost)
         this.createP2PLine(regHost)
     }
 }

@@ -55,11 +55,6 @@ func (this *Point) sendStatusForbidden(w http.ResponseWriter, url *url.URL) {
     w.Write([]byte(fmt.Sprintf("Access denied for: [%s]\n", url.Hostname())))
 }
 
-//func (this *Point) sendStatusBadRequest(w http.ResponseWriter, url *url.URL) {
-//    w.WriteHeader(http.StatusBadRequest)
-//    w.Write([]byte(fmt.Sprintf("Request is not valid format: [%s]?[%s]\n", url.Path[1:], url.RawQuery)))
-//}
-
 func (this *Point) responseToBan(w http.ResponseWriter, queryParams url.Values) {
     ban := command.NewBanResponse(this.redis)
     if err := ban.Parse(queryParams); err != nil {
@@ -80,7 +75,7 @@ func (this *Point) responseToReg(w http.ResponseWriter, queryParams url.Values, 
 func (this *Point) responseToLook(w http.ResponseWriter, queryParams url.Values) {
     look := command.NewLookResponse(this.redis)
     if err := look.Parse(queryParams); err != nil {
-        return
+        log.Println(err)
     }
     w.Write(look.PrepareResponse())
 }

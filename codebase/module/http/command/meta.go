@@ -81,8 +81,8 @@ func tryExtractKeyParam(cmdName string, keyParamName string, queryParams url.Val
     if len(out) == 0 {
         return "", errors.New(fmt.Sprintf("request '%s' not valid: bad param name - wait [%s]", cmdName, keyParamName))
     }
-    if _, has := redis.GetNode(out); ! has {
-        return "", errors.New(fmt.Sprintf("request '%s' not valid: %s not found", keyParamName, cmdName))
+    if ! redis.NodeExists(out) {
+        return "", errors.New(fmt.Sprintf("request '%s' not valid: %s not found [%s]", keyParamName, cmdName, out))
     }
     return out, nil
 }

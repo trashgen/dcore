@@ -58,8 +58,7 @@ func (this *Check) Parse(queryParams url.Values) (err error) {
 func (this Check) PrepareResponse(params ... interface{}) []byte {
     target := params[0].(string)
     var result string
-    _, ok := this.redis.GetNode(target)
-    if ok {
+    if this.redis.NodeExists(target) {
         result = "true"
     } else {
         result = "false"
