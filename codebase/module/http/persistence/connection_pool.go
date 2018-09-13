@@ -81,6 +81,8 @@ func (this *RedisModule) NodeExists(key string) bool {
     return i != 0
 }
 
+// Методы GetAllNodes/GetRandomNodes - приктически идентичны.
+// В GetAllNodes я использую идиому MULTI/EXEC.
 func (this *RedisModule) GetAllNodes() []byte {
     sb := strings.Builder{}
     err := this.pool.Do(radix.WithConn("", func (conn radix.Conn) error {
@@ -120,8 +122,10 @@ func (this *RedisModule) GetAllNodes() []byte {
     return []byte(sb.String())
 }
 
-func (this *RedisModule) GetRandomNodes(count int) map[string]*ConnectionID {
-    out := make(map[string]*ConnectionID, count)
+// Методы GetAllNodes/GetRandomNodes - приктически идентичны.
+// В GetRandomNodes я использую Lua stored proc.
+func (this *RedisModule) GetRandomNodes(count int) []byte {
+    sb := strings.Builder{}
     err := this.pool.Do(radix.WithConn("", func (conn radix.Conn) error {
         var err error
         defer func() {
@@ -146,7 +150,7 @@ func (this *RedisModule) GetRandomNodes(count int) map[string]*ConnectionID {
             if err != nil {
                 log.Fatalln(err)
             }
-            out[result[k]] = NewConnectionID(k, result["ip"], port)
+            sb.WriteString(fmt.Sprintf("%s-%s:%d\t", k, result["ip"], port))
         }
         if err = conn.Do(radix.Cmd(nil, "EXEC")); err != nil {
             return err
@@ -156,7 +160,7 @@ func (this *RedisModule) GetRandomNodes(count int) map[string]*ConnectionID {
     if err != nil {
         log.Fatalf("GetRandomNodes: [%s]\n", err)
     }
-    return out
+    return []byte(sb.String())
 }
 
 func (this *RedisModule) RemoveNode(key string) {

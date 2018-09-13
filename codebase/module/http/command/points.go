@@ -4,7 +4,6 @@ import (
     "fmt"
     "net/url"
     "reflect"
-    "strings"
     "dcore/codebase/module/http/persistence"
 )
 
@@ -61,16 +60,7 @@ func (this *Points) Parse(queryParams url.Values) (err error) {
 }
 
 func (this Points) PrepareResponse(params ... interface{}) []byte {
-    nodes := this.redis.GetRandomNodes(this.count.value)
-    i := 0
-    sb := strings.Builder{}
-    for _, v := range nodes {
-        sb.WriteString(fmt.Sprintf("%s:%d\t", v.IP, v.Port))
-        if i++; i == this.count.value {
-            break
-        }
-    }
-    return []byte(sb.String())
+    return this.redis.GetRandomNodes(this.count.value)
 }
 
 

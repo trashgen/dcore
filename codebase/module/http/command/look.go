@@ -5,7 +5,6 @@ import (
     "net/url"
     "reflect"
     "dcore/codebase/module/http/persistence"
-    "log"
 )
 
 const (
@@ -70,8 +69,8 @@ func (this *Look) Parse(queryParams url.Values) (err error) {
 }
 
 func (this Look) PrepareResponse(params... interface{}) []byte {
-    //return this.redis.GetRandomNodes(this.numNodes.value)
-    return this.redis.GetAllNodes()
+    return this.redis.GetRandomNodes(this.numNodes.value)
+    //return this.redis.GetAllNodes()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
