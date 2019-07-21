@@ -1,23 +1,24 @@
 package main
 
 import (
-    "log"
-    dcutil "dcore/codebase/util"
-    dcconf "dcore/codebase/module/config"
-    "dcore/codebase/module/http/persistence"
-    dchttpsrv "dcore/codebase/module/http/server"
+	"log"
+
+	dcconf "dcore/codebase/module/config"
+	"dcore/codebase/module/http/persistence"
+	dchttpsrv "dcore/codebase/module/http/server"
+	dcutil "dcore/codebase/util"
 )
 
 func main() {
-    c, err := dcutil.LoadJSONConfig(dcconf.NewPointConfig(dcconf.NewMetaConfig()))
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	c, err := dcutil.LoadJSONConfig(dcconf.NewPointConfig(dcconf.NewMetaConfig()))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-    config, ok := c.(*dcconf.PointConfig)
-    if ! ok {
-        log.Fatal("Config: type mismatch")
-    }
+	config, ok := c.(*dcconf.PointConfig)
+	if !ok {
+		log.Fatal("Config: type mismatch")
+	}
 
-    dchttpsrv.NewPoint(config, persistence.NewMockPersistModule()).Start()
+	dchttpsrv.NewPoint(config, persistence.NewMockPersistModule()).Start()
 }

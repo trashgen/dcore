@@ -1,9 +1,8 @@
 package main
 
 import (
-    "log"
-    "github.com/mediocregopher/radix.v3"
-    "strconv"
+	"log"
+	"strconv"
 )
 
 //local result = ""
@@ -40,30 +39,30 @@ return result
 `
 
 func main() {
-    pool, err := radix.NewPool("tcp", ":6379", 4)
-    if err != nil {
-        log.Fatalln(err)
-    }
+	pool, err := radix.NewPool("tcp", ":6379", 4)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-    scriptID := compileScript(pool, GetRandomNodes)
-    log.Printf("ScriptID is [%s]", scriptID)
-    result := runScript(pool, scriptID, 16)
-    log.Printf("Result is [%s]", result)
-    //for _, v := range result {
-    //    log.Printf("Result is [%s]", v)
-    //}
+	scriptID := compileScript(pool, GetRandomNodes)
+	log.Printf("ScriptID is [%s]", scriptID)
+	result := runScript(pool, scriptID, 16)
+	log.Printf("Result is [%s]", result)
+	//for _, v := range result {
+	//    log.Printf("Result is [%s]", v)
+	//}
 }
 
 func compileScript(pool *radix.Pool, script string) (outKey string) {
-    if err := pool.Do(radix.Cmd(&outKey, "SCRIPT",  "LOAD", script)); err != nil {
-        log.Fatal(err)
-    }
-    return outKey
+	if err := pool.Do(radix.Cmd(&outKey, "SCRIPT", "LOAD", script)); err != nil {
+		log.Fatal(err)
+	}
+	return outKey
 }
 
 func runScript(pool *radix.Pool, scriptID string, count int) (result []byte) {
-    if err := pool.Do(radix.Cmd(&result, "EVALSHA", scriptID, "0", strconv.Itoa(count))); err != nil {
-        log.Fatalln(err)
-    }
-    return result
+	if err := pool.Do(radix.Cmd(&result, "EVALSHA", scriptID, "0", strconv.Itoa(count))); err != nil {
+		log.Fatalln(err)
+	}
+	return result
 }

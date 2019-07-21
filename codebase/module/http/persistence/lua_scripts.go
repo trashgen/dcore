@@ -1,10 +1,10 @@
 package persistence
 
 const (
-    getRandomNodesName = "GetRandomNodes"
-    getRandomNodes =
-// Use case: evalsha XXX 0, <max_number_of_nodes:int>
-`
+	getRandomNodesName = "GetRandomNodes"
+	getRandomNodes     =
+	// Use case: evalsha XXX 0, <max_number_of_nodes:int>
+	`
     local hgetall = function (key)
       local bulk = redis.call('HGETALL', key)
         local result = {}
